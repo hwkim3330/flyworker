@@ -118,6 +118,16 @@ self.onmessage = async (e) => {
     else if (m.t === "vision") vision.set(m.frame);
     else if (m.t === "gain") driveHz = m.hz;
     else if (m.t === "reset") { brain.reset(); }
+    else if (m.t === "lesion") {
+      const sets = {
+        steer: [...cal.leftCh, ...cal.rightCh],
+        eyeL: meta.eye.left.ci,
+        eyeR: meta.eye.right.ci,
+      };
+      if (m.what === "heal") brain.healAll();
+      else brain.lesion(sets[m.what] || []);
+      post({ t: "lesioned", id, what: m.what, nCut: brain.nCut || 0 });
+    }
   } catch (err) {
     post({ t: "error", id, msg: String(err && err.message || err) });
   }

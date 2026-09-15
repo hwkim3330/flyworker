@@ -64,7 +64,7 @@ export class Brain {
     const { V, I, ext, refr, rate } = this;
     const N = this.c.N, dt = this.dt;
     const dm = this.decayM, ds = this.decayS, dr = this.decayR;
-    const sp = this.spikes, ws = this.wsyn;
+    const sp = this.spikes, ws = this.wsyn, cut = this.cut;
     let n = 0;
 
     const drv = this.drive;
@@ -73,6 +73,7 @@ export class Brain {
     for (let i = 0; i < N; i++) {
       if (refr[i] > 0) { refr[i] = refr[i] > dt ? refr[i] - dt : 0; V[i] = V_RESET; continue; }
       // 감각 뉴런 강제 발화
+      if (cut && cut[i]) { V[i] = V_REST; continue; }   // 잘린 뉴런은 울지 않는다
       if (drv[i] > 0 && Math.random() < drv[i]) {
         V[i] = V_RESET; refr[i] = REFRAC; sp[n++] = i; continue;
       }
@@ -104,6 +105,25 @@ export class Brain {
     this.totalSpikes += n;
     this.steps++;
     return n;
+  }
+
+  /**
+   * 뉴런을 잘라낸다(손상 실험). 해당 뉴런의 출력 연결을 끊고 발화를 막는다.
+   *
+   * "정말 이 커넥톰이 조종하는 게 맞냐"에 대한 답이다.
+   * 조향 채널을 자르면 조향이 죽는다. 잘린 게 회복되지 않는 것도 확인할 수 있다.
+   */
+  lesion(indices) {
+    if (!this.cut) this.cut = new Uint8Array(this.c.N);
+    for (const i of indices) {
+      if (this.cut[i]) continue;
+      this.cut[i] = 1;
+      this.nCut = (this.nCut || 0) + 1;
+    }
+  }
+  healAll() {
+    if (this.cut) this.cut.fill(0);
+    this.nCut = 0;
   }
 
   /** 뉴런 묶음의 평균 발화율 (스텝당 발화 확률) */

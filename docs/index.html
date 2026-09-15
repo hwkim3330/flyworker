@@ -49,9 +49,13 @@
   <!-- ── 근무 현황 ───────────────────────── -->
   <div>
     <div class="card">
-      <h2>🎮 근무 화면 <span class="small dim" id="who"></span></h2>
+      <h2>🎮 근무 화면 <span class="small dim" id="who"></span>
+        <span class="sp"></span>
+        <button id="toDoom" class="small">🔥 둠에 배치</button>
+      </h2>
       <div class="stage">
         <canvas id="game" width="320" height="240"></canvas>
+        <canvas id="doom" width="320" height="200" hidden></canvas>
         <div class="ov">
           <span class="badge mono" id="bPos">—</span>
           <span class="badge mono" id="bFrame">0f</span>
@@ -71,10 +75,27 @@
       <div class="meter"><span class="t">하행뉴런</span>
         <span class="b"><i id="mDn" style="left:0"></i></span><span class="v mono" id="vDn">0Hz</span></div>
 
-      <div class="hint">
+      <div class="hint" id="placeNote">
         게임의 목표는 <b>빛</b>입니다. 초파리가 빛을 향해 가는 건 실제 주광성(phototaxis)이라,
         억지로 붙인 규칙이 아니라 이 뇌가 원래 하는 일입니다.
         화면 좌우를 각각 왼쪽·오른쪽 눈에 넣고, 하행뉴런 집단의 좌우 불균형을 조향으로 씁니다.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🔪 손상 실험</h2>
+      <div class="small dim" style="margin-bottom:9px">
+        정말 이 커넥톰이 조종하는 게 맞는지 확인하는 방법 —
+        <b>뉴런을 잘라보고 조종이 죽는지 보면 됩니다.</b>
+      </div>
+      <div class="row">
+        <button id="cutSteer">조향 채널 절단</button>
+        <button id="cutEyeL">왼쪽 눈 절단</button>
+        <button id="heal">복구</button>
+      </div>
+      <div class="hint" id="lesionNote">
+        138,639개 중 조향 채널 <b>40개(0.03%)</b>만 잘라도 조향이 0이 됩니다.
+        복구하면 그대로 돌아옵니다.
       </div>
     </div>
 

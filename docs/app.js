@@ -6,6 +6,7 @@
  * 워커가 돌려준 조향·전진으로 게임을 움직이고, QA 감지기를 돌린다.
  */
 import { Game, BUGS } from "./game.js";
+import { Doom } from "./doom.js";
 import { QA, replay } from "./qa.js";
 
 const $ = (s) => document.querySelector(s);
@@ -18,7 +19,12 @@ const NAMES = ["초코", "방울", "깨비", "삐약", "콩이", "단추", "모�
 const company = [];
 let sel = null, runs = 0, totalBugs = 0, t0 = Date.now();
 
+// 둠은 무겁다. 한 번에 한 명만 배치한다.
+let doom = null, doomEmp = null, doomLoading = false;
+const doomQA = { last: 0, same: 0, recent: [], reported: new Set() };
+
 const gctx = $("#game").getContext("2d", { willReadFrequently: true });
+const dctx = $("#doom").getContext("2d");
 const rctx = $("#replay").getContext("2d");
 const eyeLc = $("#eyeL").getContext("2d");
 const eyeRc = $("#eyeR").getContext("2d");
@@ -67,6 +73,13 @@ function onMsg(emp, m) {
     emp.steer = m.steer; emp.thrust = m.drive;
     emp.dnHz = m.hz; emp.spikes = m.totalSpikes; emp.brainMs = m.brainMs;
   }
+  else if (m.t === "lesioned") {
+    emp.nCut = m.nCut;
+    $("#lesionNote").innerHTML = m.what === "heal"
+      ? `복구했습니다. 조향이 되살아나는지 조향 막대를 보세요.`
+      : `<b>${m.nCut.toLocaleString()}개 뉴런을 잘랐습니다.</b> 조향 막대가 어떻게 되는지 보세요.
+         복구를 누르면 그대로 돌아옵니다.`;
+  }
   else if (m.t === "error") { emp.phase = "오류"; emp.detail = m.msg; renderEmps(); }
 }
 
@@ -74,8 +87,18 @@ function onMsg(emp, m) {
 function tick() {
   for (const e of company) {
     if (!e.ready) continue;
-    const g = e.game;
 
+    // ── 둠 근무 ──
+    if (e === doomEmp && doom && doom.ready) {
+      doom.drive(e.steer, e.thrust, e.dnHz > 30);
+      doom.tick();
+      doom.vision(GW, GH, e.vision);
+      e.worker.postMessage({ t: "vision", frame: e.vision });
+      checkDoomQA(e);
+      continue;
+    }
+
+    const g = e.game;
     g.step(e.steer, e.thrust);
     const st = g.state();
     const before = e.qa.findings.length;
@@ -102,9 +125,36 @@ function tick() {
   requestAnimationFrame(tick);
 }
 
+/** 둠에는 심어둔 버그가 없다. 화면 해시로 정지·반복만 본다. */
+function checkDoomQA(e) {
+  const h = doom.screenHash();
+  if (h === doomQA.last) doomQA.same++; else { doomQA.same = 0; doomQA.last = h; }
+  doomQA.recent.push(h);
+  if (doomQA.recent.length > 240) doomQA.recent.shift();
+
+  const add = (code, label, sev, detail) => {
+    if (doomQA.reported.has(code)) return;
+    doomQA.reported.add(code);
+    const f = { code, label, sev, detail, frame: doom.frame, at: { x: 0, y: 0 },
+                by: e.name, ts: Date.now(), repro: { seed: 0, inputs: [] }, place: "doom" };
+    e.bugs.push(f); totalBugs++; renderBugs();
+  };
+  if (doomQA.same === 150)
+    add("FREEZE", "화면 정지", "high", `둠 화면이 150프레임 동안 한 픽셀도 바뀌지 않았습니다.`);
+  if (doomQA.recent.length === 240) {
+    const uniq = new Set(doomQA.recent).size;
+    if (uniq <= 3)
+      add("LOOP", "화면 반복", "medium", `최근 240프레임이 ${uniq}종류 화면만 오갑니다. 메뉴나 막힌 곳에 갇혔을 수 있습니다.`);
+  }
+}
+
 function draw() {
   const e = sel;
   if (!e) return;
+  const onDoom = e === doomEmp && doom && doom.ready;
+  $("#game").hidden = onDoom;
+  $("#doom").hidden = !onDoom;
+  if (onDoom) { doom.draw(dctx); drawMeters(e); return; }
   e.game.draw(gctx);
   const st = e.game.state();
   $("#bPos").textContent = `(${st.x}, ${st.y})`;
@@ -117,6 +167,10 @@ function draw() {
   drawEye(eyeLc, e.vision, 0);
   drawEye(eyeRc, e.vision, 1);
 
+  drawMeters(e);
+}
+
+function drawMeters(e) {
   const s = e.steer;
   const mi = $("#mSteer");
   mi.style.left = s < 0 ? `${50 + s * 50}%` : "50%";
@@ -225,5 +279,36 @@ function doReplay(f) {
 
 /* ── 시작 ────────────────────────────────────── */
 $("#hire").onclick = hire;
+$("#toDoom").onclick = async () => {
+  if (!sel || !sel.ready) return;
+  if (doomEmp === sel) {                       // 복귀
+    doomEmp = null;
+    $("#toDoom").textContent = "🔥 둠에 배치";
+    $("#placeNote").innerHTML = "연구실로 복귀했습니다. 목표는 <b>빛</b>입니다.";
+    return;
+  }
+  if (doomLoading) return;
+  if (!doom) {
+    doomLoading = true;
+    $("#toDoom").textContent = "둠 불러오는 중…";
+    try {
+      doom = await new Doom().load(new URL("./data/doom.wasm", import.meta.url).href);
+    } catch (err) {
+      $("#placeNote").textContent = "둠을 불러오지 못했습니다: " + (err.message || err);
+      doomLoading = false; $("#toDoom").textContent = "🔥 둠에 배치"; return;
+    }
+    doomLoading = false;
+  }
+  doomEmp = sel;
+  doomQA.reported.clear(); doomQA.recent.length = 0; doomQA.same = 0;
+  $("#toDoom").textContent = "🔬 연구실로 복귀";
+  $("#placeNote").innerHTML =
+    "<b>둠에는 심어둔 버그가 없습니다.</b> 여기 배치하는 이유는 " +
+    "\"자기가 만든 장난감에서만 되는 것 아니냐\"에 답하기 위해서입니다. " +
+    "같은 뇌, 같은 조향 채널로 상용 게임을 조종합니다. 화면 정지·반복만 감지합니다.";
+};
+
+for (const [btn, what] of [["#cutSteer", "steer"], ["#cutEyeL", "eyeL"], ["#heal", "heal"]])
+  $(btn).onclick = () => sel && sel.ready && sel.worker.postMessage({ t: "lesion", what });
 hire();                       // 링크 열면 바로 한 명 채용해 일을 시작한다
 requestAnimationFrame(tick);
