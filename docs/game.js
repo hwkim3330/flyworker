@@ -11,10 +11,10 @@
 import { normalizeField } from "./vision.js";
 
 export const BUGS = {
-  B1: { name: "모서리 끼임", desc: "특정 모서리에서 충돌 처리가 어긋나 빠져나올 수 없다" },
-  B2: { name: "렌더 정지", desc: "특정 구역에 들어가면 화면 갱신이 멈춘다" },
-  B3: { name: "맵 이탈", desc: "특정 각도로 벽에 닿으면 벽을 통과해 맵 밖으로 나간다" },
-  B4: { name: "문 잠김", desc: "열쇠를 먹어도 일정 확률로 문이 열리지 않는다" },
+  B1: { name: "Corner trap", desc: "collision resolution fails at one corner and never lets go" },
+  B2: { name: "Render freeze", desc: "entering one region stops the world from updating" },
+  B3: { name: "Wall clip", desc: "hitting a wall at a steep angle passes straight through it" },
+  B4: { name: "Door stays locked", desc: "picking up the key sometimes fails to open the door" },
 };
 
 const W = 320, H = 240;

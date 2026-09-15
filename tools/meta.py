@@ -84,3 +84,45 @@ for s, v in meta["eye"].items():
 print(f"  수질 좌 {len(meta['medulla'].get('left',[])):,} / 우 {len(meta['medulla'].get('right',[])):,}")
 print(f"  하행뉴런 {len(meta['descendingAll']):,}  시각투사 {len(meta['visualProjection']):,}")
 print(f"  이름 붙은 운동뉴런 {len(motor)}종")
+
+# ── 시각 경로 상세 (ON/OFF · 운동검출 · 광류적분) ─────────────
+# 초파리 시각계는 밝기가 아니라 시간 변화를 읽는다.
+#   L1 = ON 경로(밝아짐), L2 = OFF 경로(어두워짐)
+#   T4(ON)/T5(OFF) 가 방향성 운동을 계산하고
+#   HS(수평계) 가 광류를 적분해 몸통 회전을 만든다 — 광학운동반응
+def retino_of(name):
+    sub = a[ct.str.fullmatch(name, case=False, na=False)]
+    return retinotopic(sub)
+
+pathway = {
+    "L1": retino_of("L1"),          # ON
+    "L2": retino_of("L2"),          # OFF
+}
+def by_types(pat):
+    sub = a[ct.str.match(pat, case=False, na=False)]
+    return {s: sorted(sub.loc[sub['side'] == s, 'ci'].tolist()) for s in ('left', 'right')}
+
+motion = {
+    "T4": by_types(r'^T4[a-d]$'),
+    "T5": by_types(r'^T5[a-d]$'),
+}
+# 광류 적분 — 조향의 생물학적 근원
+lptc = {}
+for name in ["HSN", "HSE", "HSS", "VS1", "VS2", "VS3", "H2"]:
+    cis = sorted(a.loc[ct.str.fullmatch(name, case=False, na=False), 'ci'].tolist())
+    if not cis: continue
+    lptc[name] = {
+        "left":  [i for i in cis if side.get(i) == 'left'],
+        "right": [i for i in cis if side.get(i) == 'right'],
+    }
+
+meta["pathway"] = pathway
+meta["motion"] = motion
+meta["lptc"] = lptc
+p.write_text(json.dumps(meta, separators=(',', ':')))
+print(f"\nmeta.json {p.stat().st_size/1e6:.2f} MB (시각 경로 추가)")
+for k, v in pathway.items():
+    print(f"  {k}: 좌 {len(v.get('left',{}).get('ci',[])):>5} / 우 {len(v.get('right',{}).get('ci',[])):>5}")
+for k, v in motion.items():
+    print(f"  {k}: 좌 {len(v['left']):>5} / 우 {len(v['right']):>5}")
+print("  LPTC:", {k: f"좌{len(v['left'])}/우{len(v['right'])}" for k, v in lptc.items()})

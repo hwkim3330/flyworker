@@ -15,9 +15,10 @@ let eyeMap = null;          // 눈 뉴런 → 화면 격자 칸
 let grid = { w: 16, h: 12 };
 let vision = null;          // Float32Array(w*h)
 let driveHz = 150;
-let lastReport = 0;
+let lastReport = 0, lastAct = 0;
+let actBuf = null;          // 3D 뇌에 보낼 활동도 (재사용 풀)
 
-const post = (o) => self.postMessage(o);
+const post = (o, transfer) => self.postMessage(o, transfer || []);
 
 /** 눈 뉴런의 (u,v) 좌표를 화면 격자 칸 번호로 미리 변환해 둔다 */
 function buildEyeMap() {
@@ -54,24 +55,24 @@ function applyVision() {
 async function hire(msg) {
   id = msg.id;
   grid = msg.grid || grid;
-  post({ t: "status", id, phase: "커넥톰 내려받는 중" });
+  post({ t: "status", id, phase: "Downloading connectome" });
 
   const [bBuf, mRes] = await Promise.all([
     fetch(msg.brainUrl).then((r) => r.arrayBuffer()),
     fetch(msg.metaUrl).then((r) => r.json()),
   ]);
   meta = mRes;
-  post({ t: "status", id, phase: "커넥톰 푸는 중" });
+  post({ t: "status", id, phase: "Decoding" });
   const c = decodeBrain(bBuf);
   brain = new Brain(c, 1.0);
   eyeMap = buildEyeMap();
   vision = new Float32Array(grid.w * grid.h);
 
-  post({ t: "status", id, phase: "수습 교육 중", detail: "좌우 시야 반응 검사" });
+  post({ t: "status", id, phase: "Training", detail: "probing left/right vision" });
   cal = await calibrate(brain, meta.eye, meta.descendingAll, {
     onProgress: (which, p) =>
-      post({ t: "status", id, phase: "수습 교육 중",
-             detail: `${which === "L" ? "왼쪽" : "오른쪽"} 시야 ${Math.round(p * 100)}%` }),
+      post({ t: "status", id, phase: "Training",
+             detail: `${which === "L" ? "left" : "right"} eye ${Math.round(p * 100)}%` }),
   });
 
   post({
@@ -94,6 +95,22 @@ function loop() {
   }
 
   const now = performance.now();
+
+  // 3D 뇌용 활동도 — 소유권을 넘겨 복사 비용을 없앤다
+  if (now - lastAct > 140) {
+    lastAct = now;
+    const N = brain.c.N;
+    if (!actBuf || actBuf.length !== N) actBuf = new Uint8Array(N);
+    const rate = brain.rate;
+    for (let i = 0; i < N; i++) {
+      const v = rate[i] * 900;                 // 0.28 정도면 포화
+      actBuf[i] = v > 255 ? 255 : v | 0;
+    }
+    const send = actBuf;
+    actBuf = null;                             // 넘긴 버퍼는 다시 안 쓴다
+    post({ t: "act", id, act: send }, [send.buffer]);
+  }
+
   if (now - lastReport > 100) {
     lastReport = now;
     post({
@@ -126,7 +143,8 @@ self.onmessage = async (e) => {
       };
       if (m.what === "heal") brain.healAll();
       else brain.lesion(sets[m.what] || []);
-      post({ t: "lesioned", id, what: m.what, nCut: brain.nCut || 0 });
+      post({ t: "lesioned", id, what: m.what, nCut: brain.nCut || 0,
+             indices: m.what === "heal" ? null : (sets[m.what] || []) });
     }
   } catch (err) {
     post({ t: "error", id, msg: String(err && err.message || err) });

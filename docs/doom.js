@@ -23,6 +23,7 @@ export class Doom {
     this.frame = 0;
     this.down = new Set();
     this.key = {};
+    this.byHuman = false;
   }
 
   async load(url) {
@@ -81,8 +82,9 @@ export class Doom {
   tap(name) { this.hold(name, true); }
   up(name) { this.hold(name, false); }
 
-  /** 초파리가 조종한다 */
+  /** 초파리가 조종한다. 사람 모드면 비켜준다. */
   drive(steer, thrust, fire) {
+    if (this.byHuman) { for (const k of [...this.down]) { this.ex.reportKeyUp(k); } this.down.clear(); return; }
     this.hold("KEY_LEFTARROW", steer < -0.18);
     this.hold("KEY_RIGHTARROW", steer > 0.18);
     this.hold("KEY_UPARROW", thrust > 0.45);

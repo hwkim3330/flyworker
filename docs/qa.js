@@ -10,11 +10,11 @@
  */
 
 const RULES = {
-  FREEZE:   { label: "화면 정지",   sev: "high" },
-  STUCK:    { label: "끼임",       sev: "high" },
-  OOB:      { label: "맵 이탈",     sev: "critical" },
-  NOPROG:   { label: "진행 불가",   sev: "medium" },
-  DOORLOCK: { label: "문 잠김",     sev: "high" },
+  FREEZE:   { label: "Frozen state",   sev: "high" },
+  STUCK:    { label: "Stuck",          sev: "high" },
+  OOB:      { label: "Out of bounds",  sev: "critical" },
+  NOPROG:   { label: "No progress",    sev: "medium" },
+  DOORLOCK: { label: "Door locked",    sev: "high" },
 };
 
 export class QA {
@@ -51,7 +51,7 @@ export class QA {
 
     // 1) 화면/상태 정지
     if (this.sameState === 90) this.report("FREEZE", st,
-      `상태가 90프레임(약 1.5초) 동안 전혀 바뀌지 않았습니다.`);
+      `Game state did not change for 90 frames (~1.5s).`);
 
     // 2) 끼임 — 300프레임 동안 반경 6px 안에서만 맴돈다
     if (this.hist.length >= 300) {
@@ -63,18 +63,18 @@ export class QA {
       }
       if (maxx - minx <= 6 && maxy - miny <= 6 && this.sameState < 90)
         this.report("STUCK", st,
-          `300프레임 동안 ${maxx - minx}×${maxy - miny}픽셀 범위를 벗어나지 못했습니다.`);
+          `Confined to a ${maxx - minx}×${maxy - miny} pixel box for 300 frames.`);
     }
 
     // 3) 맵 이탈
     if (st.x < 0 || st.y < 0 || st.x > this.cfg.W || st.y > this.cfg.H || st.escaped)
-      this.report("OOB", st, `좌표 (${st.x}, ${st.y})는 맵(${this.cfg.W}×${this.cfg.H}) 밖입니다.`);
+      this.report("OOB", st, `Position (${st.x}, ${st.y}) is outside the ${this.cfg.W}×${this.cfg.H} map.`);
 
     // 4) 문 잠김 — 열쇠를 먹었는데 문이 계속 닫혀 있다
     if (st.hasKey && this.keyFrame < 0) this.keyFrame = st.frame;
     if (st.hasKey && !st.doorOpen && st.frame - this.keyFrame > 240)
       this.report("DOORLOCK", st,
-        `열쇠 획득 후 ${st.frame - this.keyFrame}프레임이 지났는데 문이 열리지 않았습니다.`);
+        `Key taken ${st.frame - this.keyFrame} frames ago and the door is still shut.`);
 
     return this.findings;
   }
@@ -83,7 +83,7 @@ export class QA {
   progress(st, dist) {
     if (dist < this.bestDist - 2) { this.bestDist = dist; this.sinceBest = 0; }
     else if (++this.sinceBest === 1800)
-      this.report("NOPROG", st, `1800프레임(약 30초) 동안 목표에 더 가까워지지 못했습니다.`);
+      this.report("NOPROG", st, `No progress toward the goal for 1800 frames (~30s).`);
   }
 
   report(code, st, detail) {
@@ -107,7 +107,7 @@ export class QA {
   /** 재현 파일 (JSON) */
   static reproBlob(f) {
     return new Blob([JSON.stringify({
-      note: "초파리 직원 재현 파일 — 같은 시드와 입력열을 그대로 먹이면 100% 재현됩니다.",
+      note: "Fly Worker reproduction file — feed the same seed and input sequence to reproduce this exactly.",
       code: f.code, label: f.label, detail: f.detail,
       frame: f.frame, at: f.at, seed: f.repro.seed,
       inputs: f.repro.inputs,

@@ -1,4 +1,15 @@
-# 초파리 직원 (flyworker)
+# Fly Worker (flyworker)
+
+**A real fruit-fly connectome playing games in your browser — the only implementation that does not correct its steering.**
+
+🔗 Live: https://hwkim3330.github.io/flyworker/ · https://huggingface.co/spaces/kimhyunwoo/flyworker
+
+138,639 neurons and 2.7M connections from the FlyWire connectome run as a spiking network
+in the browser, drive three games, and produce **bug reports that reproduce exactly**.
+Zero LLM inference.
+
+---
+
 
 **조향을 보정하지 않은 유일한 초파리 커넥톰 구현. LLM 추론 0회.**
 

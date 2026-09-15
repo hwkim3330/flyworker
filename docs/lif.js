@@ -20,8 +20,19 @@ const W_SYN = 0.44;
 
 export class Brain {
   /** @param {{N:number,indptr:Uint32Array,indices:Uint32Array,weights:Int16Array}} c */
-  constructor(c, dt = 1.0, wsyn = W_SYN) {
+  /**
+   * @param tonic 모든 뉴런에 주는 기저 전류(mV).
+   *
+   * 실제 뉴런은 가만히 있어도 조금씩 운다. 억제 시냅스는 그 기저 활동을 눌러서
+   * 정보를 전달한다. 기저가 0이면 억제는 아무 일도 하지 못한다.
+   *
+   * 초파리 ON 경로가 정확히 그런 구조다 — L1 이 글루탐산성 억제로 Mi1 을 누르고,
+   * Mi1 이 다시 반전시켜 ON 신호를 만든다. 기저 활동 없이는 ON 경로 전체가
+   * 죽고, ON 입력을 받는 T4 도 영영 울지 않는다. 실측으로 확인했다.
+   */
+  constructor(c, dt = 1.0, wsyn = W_SYN, tonic = 0) {
     this.wsyn = wsyn;
+    this.tonic = tonic;
     this.c = c;
     this.dt = dt;
     const N = c.N;
@@ -64,7 +75,7 @@ export class Brain {
     const { V, I, ext, refr, rate } = this;
     const N = this.c.N, dt = this.dt;
     const dm = this.decayM, ds = this.decayS, dr = this.decayR;
-    const sp = this.spikes, ws = this.wsyn, cut = this.cut;
+    const sp = this.spikes, ws = this.wsyn, cut = this.cut, tn = this.tonic;
     let n = 0;
 
     const drv = this.drive;
@@ -77,7 +88,7 @@ export class Brain {
       if (drv[i] > 0 && Math.random() < drv[i]) {
         V[i] = V_RESET; refr[i] = REFRAC; sp[n++] = i; continue;
       }
-      const drive = I[i] + ext[i];
+      const drive = I[i] + ext[i] + tn;
       // 닫힌 형태 지수 갱신 (오일러보다 안정적)
       V[i] = V_REST + (V[i] - V_REST) * dm + drive * (1 - dm);
       if (V[i] >= V_TH) {

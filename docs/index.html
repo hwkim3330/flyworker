@@ -1,145 +1,213 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>초파리 직원 — 조향을 보정하지 않은 초파리 커넥톰</title>
-<meta name="description" content="조향을 보정하지 않은 유일한 초파리 커넥톰 구현. 하행뉴런 출력만으로 게임을 조종하고, 버그를 찾아 100% 재현 가능한 리포트를 만듭니다. LLM 추론 0회.">
-<meta name="theme-color" content="#0a0d11">
+<title>Fly Worker</title>
+<meta name="description" content="A real fruit-fly connectome playing games in your browser. The only implementation that does not correct its steering. 138,639 neurons, zero LLM inference.">
+<meta name="theme-color" content="#000000">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🪰</text></svg>">
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
 
 <header>
-  <h1>🪰 초파리 직원</h1>
-  <span class="tag">조향을 보정하지 않은 유일한 초파리 커넥톰 구현</span>
+  <h1>Fly Worker</h1>
+  <span class="sub">A connectome that does not correct its steering</span>
   <div class="sp"></div>
-  <span class="small dim mono">FlyWire v783 · 138,639 뉴런 · 270만 연결</span>
-  <span class="small" style="color:var(--ok)">LLM 추론 0회</span>
+  <span class="meta">FlyWire v783 · <b>138,639</b> neurons · <b>2.7M</b> connections · <b>0</b> LLM calls</span>
 </header>
 
-<div class="wrap">
+<div class="page">
 
-  <!-- ── 인사팀 ─────────────────────────── -->
-  <div>
-    <div class="card">
-      <h2>👥 사원 명부</h2>
-      <div id="emps"></div>
-      <button id="hire" class="wide on" style="margin-top:4px">직원 채용</button>
-      <div class="hint" id="hireHint">
-        채용하면 커넥톰(7.5MB)을 내려받아 <b>수습 교육</b>을 거칩니다.
-        좌우 시야에 빛을 비춰 그 개체의 조향 뉴런을 찾는 과정입니다.
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>📊 회사 실적</h2>
-      <div class="row">
-        <div class="stat"><span class="small dim">총 근무</span><b id="sTime">0분</b></div>
-        <div class="stat"><span class="small dim">발견 버그</span><b id="sBugs">0</b></div>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <div class="stat"><span class="small dim">총 발화</span><b id="sSpk">0</b></div>
-        <div class="stat"><span class="small dim">플레이</span><b id="sRuns">0</b></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── 근무 현황 ───────────────────────── -->
-  <div>
-    <div class="card">
-      <h2>🎮 근무 화면 <span class="small dim" id="who"></span>
-        <span class="sp"></span>
-        <button id="toDoom" class="small">🔥 둠에 배치</button>
-      </h2>
-      <div class="stage">
-        <canvas id="game" width="320" height="240"></canvas>
-        <canvas id="doom" width="320" height="200" hidden></canvas>
-        <div class="ov">
-          <span class="badge mono" id="bPos">—</span>
-          <span class="badge mono" id="bFrame">0f</span>
-          <span class="badge" id="bState">대기</span>
+  <div class="hero">
+    <div class="panel">
+      <div class="hd">
+        <h2 id="who">Workplace</h2>
+        <div class="sp"></div>
+        <div class="seg">
+          <button id="toGta" class="on">GTA1</button>
+          <button id="toDoom">DOOM</button>
+          <button id="toLab">Lab</button>
+        </div>
+        <div class="seg">
+          <button id="byFly" class="on">Fly</button>
+          <button id="byHuman">You</button>
         </div>
       </div>
 
-      <div class="eyes">
-        <div><div class="small dim">왼쪽 눈이 보는 것</div><canvas id="eyeL" width="8" height="12"></canvas></div>
-        <div><div class="small dim">오른쪽 눈</div><canvas id="eyeR" width="8" height="12"></canvas></div>
+      <div class="stage">
+        <canvas id="gta" width="640" height="400"></canvas>
+        <canvas id="doom" width="320" height="200"></canvas>
+        <canvas id="game" width="320" height="240"></canvas>
+        <div class="hud">
+          <span class="chip mono" id="bPos">—</span>
+          <span class="chip mono" id="bFrame">0f</span>
+          <span class="chip" id="bState">Starting</span>
+        </div>
       </div>
 
-      <div class="meter"><span class="t">조향</span>
-        <span class="b"><i id="mSteer"></i></span><span class="v mono" id="vSteer">0</span></div>
-      <div class="meter"><span class="t">전진</span>
-        <span class="b"><i id="mThr" style="left:0"></i></span><span class="v mono" id="vThr">0</span></div>
-      <div class="meter"><span class="t">하행뉴런</span>
-        <span class="b"><i id="mDn" style="left:0"></i></span><span class="v mono" id="vDn">0Hz</span></div>
+      <div class="bd">
+        <div class="gauges">
+          <div class="g"><span class="k">Steering</span><span class="t"><i id="mSteer"></i></span><span class="v mono" id="vSteer">0</span></div>
+          <div class="g"><span class="k">Thrust</span><span class="t"><i id="mThr" style="left:0"></i></span><span class="v mono" id="vThr">0</span></div>
+          <div class="g"><span class="k">Descending</span><span class="t"><i id="mDn" style="left:0"></i></span><span class="v mono" id="vDn">0Hz</span></div>
+        </div>
 
-      <div class="hint" id="placeNote">
-        <b>이 초파리는 게임을 잘 하지 못합니다.</b> 목표를 향해 가지 못합니다.
-        측정해보면 조향과 빛 방향의 상관계수는 0입니다.<br><br>
-        그런데 다른 초파리 커넥톰 프로젝트들은 잘 움직입니다 —
-        조향을 손으로 짰거나 뇌의 기여를 눌러놨기 때문입니다.
-        우리는 <b>하행뉴런 출력만</b> 씁니다. 헤매는 모습이 지금 기술의 실제 모습입니다.<br><br>
-        QA 퍼저에게 필요한 건 목표 추적이 아니라 <b>지치지 않는 탐색</b>입니다.
+        <div class="eyes">
+          <div><div class="k">Left eye</div><canvas id="eyeL" width="8" height="12"></canvas></div>
+          <div><div class="k">Right eye</div><canvas id="eyeR" width="8" height="12"></canvas></div>
+        </div>
+
+        <div class="muted" id="humanNote" style="margin-top:14px"></div>
+        <div class="note" id="placeNote" style="margin-top:14px"></div>
       </div>
     </div>
 
-    <div class="card">
-      <h2>🔪 손상 실험</h2>
-      <div class="small dim" style="margin-bottom:9px">
-        조향을 스크립트로 보정한 구현은 뉴런을 아무리 잘라도 똑같이 움직입니다.
-        <b>우리 초파리는 멈춥니다.</b> 그게 이 프로젝트의 핵심 증거입니다.
+    <div>
+      <div class="panel">
+        <div class="hd"><h2>Brain</h2><span class="tag">real anatomical coordinates</span></div>
+        <div class="brainwrap">
+          <canvas id="b3d"></canvas>
+          <div class="legend">
+            <span><i style="background:#4d9fdb"></i>Optic</span>
+            <span><i style="background:#8c8ca0"></i>Central</span>
+            <span><i style="background:#f2c74d"></i>Sensory</span>
+            <span><i style="background:#59e68c"></i>Descending</span>
+            <span><i style="background:#b373e6"></i>Projection</span>
+          </div>
+        </div>
+        <div class="bd">
+          <div class="note">
+            Watch activity spread from the <b>optic lobes</b> through the <b>central brain</b>
+            into the <b>descending neurons</b>.
+          </div>
+          <div style="display:flex;gap:7px;margin-top:14px;flex-wrap:wrap">
+            <button class="plain" id="cutSteer">Cut steering channel</button>
+            <button class="plain" id="cutEyeL">Cut left eye</button>
+            <button class="plain" id="heal">Heal</button>
+          </div>
+          <div class="muted" id="lesionNote" style="margin-top:10px">
+            Cutting <b>40 neurons out of 138,639</b> — 0.03% — drops steering to zero.
+            Implementations that script their steering survive this test. This one does not.
+          </div>
+        </div>
       </div>
-      <div class="row">
-        <button id="cutSteer">조향 채널 절단</button>
-        <button id="cutEyeL">왼쪽 눈 절단</button>
-        <button id="heal">복구</button>
-      </div>
-      <div class="hint" id="lesionNote">
-        138,639개 중 조향 채널 <b>40개(0.03%)</b>만 잘라도 조향이 0이 됩니다.
-        복구하면 그대로 돌아옵니다.
-      </div>
-    </div>
 
-    <div class="card">
-      <h2>🧪 심어둔 버그</h2>
-      <div class="small dim" style="margin-bottom:8px">
-        이 게임에는 버그 4개를 일부러 넣어뒀습니다. 감지기는 <b>버그의 위치를 모릅니다.</b>
-        증상만 보고 찾아냅니다.
+      <div class="panel" style="margin-top:20px">
+        <div class="hd"><h2>Staff</h2></div>
+        <div class="bd">
+          <div id="emps"></div>
+          <button class="plain cta" id="hire" style="width:100%">Hire a fly</button>
+          <div class="muted" id="hireHint" style="margin-top:10px">
+            Each hire downloads the connectome and goes through <b>training</b> —
+            flashing light into each eye to find that individual's steering neurons.
+          </div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="k">On shift</div><div class="v" id="sTime">0m</div></div>
+          <div class="stat"><div class="k">Bugs</div><div class="v" id="sBugs">0</div></div>
+          <div class="stat"><div class="k">Spikes</div><div class="v" id="sSpk">0</div></div>
+          <div class="stat"><div class="k">Runs</div><div class="v" id="sRuns">0</div></div>
+        </div>
       </div>
-      <div id="planted" class="small"></div>
     </div>
   </div>
 
-  <!-- ── 버그 리포트 ─────────────────────── -->
-  <div>
-    <div class="card">
-      <h2>🐛 버그 리포트 <span class="small dim" id="bugN"></span></h2>
-      <div id="bugs"><div class="small dim">아직 없습니다. 직원이 일하는 중입니다.</div></div>
+  <div class="grid2">
+    <div class="panel">
+      <div class="hd"><h2>Findings</h2><span class="tag" id="bugN"></span></div>
+      <div id="bugs"><div class="bd muted">Nothing yet. The fly is working.</div></div>
     </div>
 
-    <div class="card">
-      <h2>♻️ 재현</h2>
-      <div class="stage" style="max-width:100%">
-        <canvas id="replay" width="320" height="240"></canvas>
-        <div class="ov"><span class="badge" id="rState">리포트에서 재현을 누르세요</span></div>
+    <div class="panel">
+      <div class="hd"><h2>Reproduce</h2></div>
+      <div class="stage" style="aspect-ratio:4/3">
+        <canvas id="replay" class="showing" width="320" height="240"></canvas>
+        <div class="hud"><span class="chip" id="rState">Pick a finding to replay</span></div>
       </div>
-      <div class="hint">
-        게임은 <b>시드 + 입력열</b>에 대해 결정적입니다. 그래서 입력열만 저장하면
-        버그가 <b>100% 그대로 재현</b>됩니다. 실제 QA에서 가장 괴로운
-        "재현이 안 되는 버그"가 구조적으로 사라집니다.
-        <br><span class="mono small">재현 검증 12/12 완전 일치</span>
+      <div class="bd">
+        <div class="note">
+          The lab game is deterministic given <b>seed + input sequence</b>. Storing the inputs
+          reproduces any bug <b>exactly</b>. The hardest thing in real QA — a bug that won't
+          reproduce — stops existing.
+        </div>
+        <div class="muted mono" style="margin-top:8px">Verified 12/12 exact matches</div>
       </div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:20px">
+    <div class="bd">
+      <div class="note">
+        <b>This fly is bad at games.</b> It does not reach the goal. Correlation between its
+        steering and the direction of light is zero across 8 seeds.
+        Other connectome projects move convincingly — open their code and you find the steering
+        hand-written or the brain's contribution clamped. This one uses descending-neuron output
+        and nothing else. <b>Stumbling around is what the technology actually does today.</b>
+      </div>
+
+      <details>
+        <summary>Who actually steers, in each implementation</summary>
+        <div class="note">
+          <b>abgunaydin/webgpu-fly</b> — its limitations file states plainly:
+          <i>"the connectome does not walk the fly."</i> 20.3M edges reach the body as one scalar
+          plus a turn bias, scaling a hand-written <span class="mono">sin(t × 10 Hz)</span> tripod gait.<br><br>
+          <b>Xenova/fruit-fly-simulation</b> — line one of the decoder reads
+          <i>"Engineered rate decoder"</i>; the README says the movements are
+          <i>"illustrative, not validated predictions of fly behavior."</i><br><br>
+          <b>snedea/flybrain</b> — README claims <i>"Behavior is not scripted"</i>, but the steering code
+          clamps the brain to <span class="mono">±0.05</span> and computes heading with
+          <span class="mono">atan2</span>. Its own comment: <i>"Steering is primarily handled by
+          behavioral biases."</i> The clamp exists <i>"to prevent worker noise from causing spinning."</i><br><br>
+          Nobody has done it. The honest ones say so.
+        </div>
+      </details>
+
+      <details>
+        <summary>Why it fails — wiring without dynamics</summary>
+        <div class="note">
+          We went after this properly. Flies see motion, not brightness, so we fed ON/OFF temporal
+          contrast into the anatomically correct cells — L1 for ON, L2 for OFF.<br><br>
+          <span class="mono">L1 125Hz → Mi1 0.08Hz, Tm3 0.00Hz, Mi4 0.00Hz</span> — ON pathway dead.<br>
+          <span class="mono">L2 125Hz → Tm1 26.0Hz, Tm2 15.5Hz, Tm4 21.0Hz</span> — OFF pathway fine.<br><br>
+          The fly's ON pathway works by <b>sign inversion through inhibition</b>: L1 inhibits Mi1,
+          Mi1 inverts again. Our model has <b>no baseline firing</b>, so inhibiting a silent neuron
+          does nothing. T4, which needs ON input, never fires.<br><br>
+          Adding tonic drive woke HS cells from 0 to 6.7 Hz — but direction selectivity stayed at zero.
+          Doubling the visual connectome (2.7M → 5.9M edges) left T4 at 0.0 Hz.<br><br>
+          <b>The real reason: T4/T5 direction selectivity comes from neuron-specific timing</b> —
+          Mi9 slow, Mi1/Tm3 fast, Mi4 delayed inhibition. Our model gives every neuron the same
+          τ<sub>m</sub> = 20 ms, τ<sub>syn</sub> = 5 ms. <b>The connectome gives you wiring, not dynamics.</b>
+          No amount of better input fixes that.
+        </div>
+      </details>
+
+      <details>
+        <summary>So why is it useful</summary>
+        <div class="note">
+          A QA fuzzer does not need goal-seeking. It needs <b>tireless exploration</b>.
+          Pure randomness cannot get past a title screen; an LLM is too expensive to run for hours.
+          A biological network sits in between — structured, non-deterministic input at
+          <b>zero inference cost, forever</b>.<br><br>
+          The lab game has four bugs planted in it. The detector does not know where they are;
+          it only watches for symptoms. Six findings per ten runs, three of the four planted bugs.
+        </div>
+      </details>
+
+      <details>
+        <summary>The four planted bugs</summary>
+        <div class="note" id="planted"></div>
+      </details>
     </div>
   </div>
 </div>
 
 <footer>
-  초파리 직원 · 커넥톰 <b>FlyWire v783</b> (CC-BY 4.0) · 뉴런 주석 Schlegel et al. (CC-BY 4.0)<br>
-  LIF 파라미터는 Shiu et al. 커넥톰 모델을 따릅니다 ·
+  Connectome <b>FlyWire v783</b> (CC-BY 4.0) · annotations Schlegel et al. · LIF parameters Shiu et al.<br>
+  DOOM <span class="mono">jacobenget/doom.wasm</span> · GTA1 <span class="mono">codenamecpp/carnage3d</span> (MIT)<br>
   <a href="https://github.com/hwkim3330/flyworker">GitHub</a> ·
-  <a href="https://github.com/hwkim3330/flyworker/blob/main/LIMITATIONS.md"><b>한계 문서</b></a>
+  <a href="LIMITATIONS.md">Limitations</a>
 </footer>
 
 <script type="module" src="app.js"></script>

@@ -1,0 +1,28 @@
+{
+  "name": "flyworker",
+  "version": "1.0.0",
+  "description": "초파리 커넥톰으로 게임을 테스트하는 브라우저 도구",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hwkim3330/flyworker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/hwkim3330/flyworker/issues"
+  },
+  "homepage": "https://github.com/hwkim3330/flyworker#readme",
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  },
+  "private": true
+}
