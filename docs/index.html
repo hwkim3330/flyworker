@@ -160,7 +160,16 @@
           clamps the brain to <span class="mono">±0.05</span> and computes heading with
           <span class="mono">atan2</span>. Its own comment: <i>"Steering is primarily handled by
           behavioral biases."</i> The clamp exists <i>"to prevent worker noise from causing spinning."</i><br><br>
-          Nobody has done it. The honest ones say so.
+          <b>nftechie/doomfly</b> — the furthest anyone has taken this. 166,700 neurons, 25.6M
+          connections, plus dopamine plasticity: damage drives a 200 ms aversive pulse into two
+          PPL101 cells and rewrites 4,184 KC→MBON11 weights during play. Its README opens with
+          <i>"Status: live experimental training, not demonstrated learned survival. The current v6
+          candidate failed its visual, conditioning and survival validation gates."</i>
+          Steering is <span class="mono">clip((DNp20_R − DNp20_L) × .12, −6, 6)</span>, which the
+          author calls <i>"engineered controller assignments, not established natural motor functions."</i>
+          We measured DNp20 in our own model: left/right separation <b>0.18 Hz</b>, against
+          <b>0.889</b> for the channels we find statistically. There is one DNp20 per side — too few to read.<br><br>
+          Nobody has done it. Even with reinforcement learning. The honest ones say so.
         </div>
       </details>
 

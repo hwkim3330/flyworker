@@ -44,7 +44,30 @@ README가 인상적으로 들린다면, 그 별표는 전부 여기 붙어 있�
   *"Steering is primarily handled by behavioral biases"* 라고 적혀 있습니다.
   클램프 이유는 *"to prevent worker noise from causing spinning"* 입니다.
 
-**아무도 못 했습니다.** 우리는 그래서 조향을 보정하지 않기로 했습니다.
+- **`nftechie/doomfly`** — 이 분야에서 가장 멀리 간 시도입니다. MaleCNS v1.0(166,700뉴런,
+  2,560만 연결)에 도파민 가소성까지 붙였습니다. 손상 시 PPL101 도파민 세포 2개에 200ms
+  혐오 자극을 주고 KC→MBON11 연결 4,184개를 가소성 규칙으로 바꿉니다.
+  그런데 README 첫 줄이 이렇습니다:
+
+  > **Status: live experimental training, not demonstrated learned survival.**
+  > The current v6 candidate failed its visual, conditioning and survival validation gates.
+
+  조향은 `turn = clip((rate(DNp20,R) - rate(DNp20,L)) * .12, -6, 6)` 입니다.
+  그들 스스로 *"engineered controller assignments, not established natural motor functions"* 라고
+  적어놨습니다.
+
+  **우리 모델에서 DNp20 을 직접 재봤습니다.**
+
+  | 읽기 방식 | 좌우 분리도 |
+  |---|---|
+  | DNp20 R−L (doomfly 채택) | **0.18 Hz** |
+  | DNa02 R−L | 7.45 Hz |
+  | 이 프로젝트의 통계 채널 | **0.889** (정규화) |
+
+  DNp20 은 좌우를 거의 구분하지 못합니다. 개체당 좌우 각 1개뿐이라 표본이 너무 작습니다.
+
+**아무도 못 했습니다.** 강화학습을 붙인 쪽도 자기 검증을 통과하지 못했습니다.
+우리는 그래서 조향을 보정하지 않기로 했습니다.
 초파리가 헤매는 모습이 지금 기술의 실제 모습입니다.
 
 ## 1.5 왜 못 하는가 — 배선은 있지만 동역학이 없다
