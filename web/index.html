@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>초파리 직원 — 진짜 초파리 뇌가 게임을 테스트합니다</title>
+<meta name="description" content="초파리 뇌 커넥톰 138,639개 뉴런을 브라우저에서 돌려 게임을 플레이시키고, 버그를 찾아 100% 재현 가능한 리포트를 만듭니다. LLM 추론 0회.">
+<meta name="theme-color" content="#0a0d11">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🪰</text></svg>">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<header>
+  <h1>🪰 초파리 직원</h1>
+  <span class="tag">진짜 초파리 뇌가 게임을 테스트합니다</span>
+  <div class="sp"></div>
+  <span class="small dim mono">FlyWire v783 · 138,639 뉴런 · 270만 연결</span>
+  <span class="small" style="color:var(--ok)">LLM 추론 0회</span>
+</header>
+
+<div class="wrap">
+
+  <!-- ── 인사팀 ─────────────────────────── -->
+  <div>
+    <div class="card">
+      <h2>👥 사원 명부</h2>
+      <div id="emps"></div>
+      <button id="hire" class="wide on" style="margin-top:4px">직원 채용</button>
+      <div class="hint" id="hireHint">
+        채용하면 커넥톰(7.5MB)을 내려받아 <b>수습 교육</b>을 거칩니다.
+        좌우 시야에 빛을 비춰 그 개체의 조향 뉴런을 찾는 과정입니다.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📊 회사 실적</h2>
+      <div class="row">
+        <div class="stat"><span class="small dim">총 근무</span><b id="sTime">0분</b></div>
+        <div class="stat"><span class="small dim">발견 버그</span><b id="sBugs">0</b></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div class="stat"><span class="small dim">총 발화</span><b id="sSpk">0</b></div>
+        <div class="stat"><span class="small dim">플레이</span><b id="sRuns">0</b></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 근무 현황 ───────────────────────── -->
+  <div>
+    <div class="card">
+      <h2>🎮 근무 화면 <span class="small dim" id="who"></span></h2>
+      <div class="stage">
+        <canvas id="game" width="320" height="240"></canvas>
+        <div class="ov">
+          <span class="badge mono" id="bPos">—</span>
+          <span class="badge mono" id="bFrame">0f</span>
+          <span class="badge" id="bState">대기</span>
+        </div>
+      </div>
+
+      <div class="eyes">
+        <div><div class="small dim">왼쪽 눈이 보는 것</div><canvas id="eyeL" width="8" height="12"></canvas></div>
+        <div><div class="small dim">오른쪽 눈</div><canvas id="eyeR" width="8" height="12"></canvas></div>
+      </div>
+
+      <div class="meter"><span class="t">조향</span>
+        <span class="b"><i id="mSteer"></i></span><span class="v mono" id="vSteer">0</span></div>
+      <div class="meter"><span class="t">전진</span>
+        <span class="b"><i id="mThr" style="left:0"></i></span><span class="v mono" id="vThr">0</span></div>
+      <div class="meter"><span class="t">하행뉴런</span>
+        <span class="b"><i id="mDn" style="left:0"></i></span><span class="v mono" id="vDn">0Hz</span></div>
+
+      <div class="hint">
+        게임의 목표는 <b>빛</b>입니다. 초파리가 빛을 향해 가는 건 실제 주광성(phototaxis)이라,
+        억지로 붙인 규칙이 아니라 이 뇌가 원래 하는 일입니다.
+        화면 좌우를 각각 왼쪽·오른쪽 눈에 넣고, 하행뉴런 집단의 좌우 불균형을 조향으로 씁니다.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🧪 심어둔 버그</h2>
+      <div class="small dim" style="margin-bottom:8px">
+        이 게임에는 버그 4개를 일부러 넣어뒀습니다. 감지기는 <b>버그의 위치를 모릅니다.</b>
+        증상만 보고 찾아냅니다.
+      </div>
+      <div id="planted" class="small"></div>
+    </div>
+  </div>
+
+  <!-- ── 버그 리포트 ─────────────────────── -->
+  <div>
+    <div class="card">
+      <h2>🐛 버그 리포트 <span class="small dim" id="bugN"></span></h2>
+      <div id="bugs"><div class="small dim">아직 없습니다. 직원이 일하는 중입니다.</div></div>
+    </div>
+
+    <div class="card">
+      <h2>♻️ 재현</h2>
+      <div class="stage" style="max-width:100%">
+        <canvas id="replay" width="320" height="240"></canvas>
+        <div class="ov"><span class="badge" id="rState">리포트에서 재현을 누르세요</span></div>
+      </div>
+      <div class="hint">
+        게임은 <b>시드 + 입력열</b>에 대해 결정적입니다. 그래서 입력열만 저장하면
+        버그가 <b>100% 그대로 재현</b>됩니다. 실제 QA에서 가장 괴로운
+        "재현이 안 되는 버그"가 구조적으로 사라집니다.
+        <br><span class="mono small">재현 검증 12/12 완전 일치</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  초파리 직원 · 커넥톰 <b>FlyWire v783</b> (CC-BY 4.0) · 뉴런 주석 Schlegel et al. (CC-BY 4.0)<br>
+  LIF 파라미터는 Shiu et al. 커넥톰 모델을 따릅니다 · <a href="https://github.com/hwkim3330/flyworker">GitHub</a>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

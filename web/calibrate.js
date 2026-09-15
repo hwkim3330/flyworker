@@ -11,7 +11,7 @@
 
 /**
  * @param {import('./lif.js').Brain} brain
- * @param {{left:number[], right:number[]}} eye  좌/우 눈 뉴런 인덱스
+ * @param {{left:{ci:number[]}, right:{ci:number[]}}} eye  좌/우 눈 (meta.eye 형태)
  * @param {number[]} dn  하행뉴런 인덱스
  * @param {{steps?:number, hz?:number, top?:number, minDiff?:number, onProgress?:Function}} opt
  */
@@ -22,8 +22,12 @@ export async function calibrate(brain, eye, dn, opt = {}) {
   const minDiff = opt.minDiff ?? 3;      // Hz
   const prog = opt.onProgress;
 
-  const L = Uint32Array.from(eye.left);
-  const R = Uint32Array.from(eye.right);
+  // meta.eye 는 {left:{ci,u,v}, right:{...}} 형태다. 배열로 착각하면 조용히 빈 배열이 되어
+  // 자극이 하나도 안 들어가고 조향 채널이 0개가 된다.
+  const pick = (o) => Uint32Array.from(Array.isArray(o) ? o : (o?.ci ?? []));
+  const L = pick(eye.left);
+  const R = pick(eye.right);
+  if (!L.length || !R.length) throw new Error("눈 뉴런 목록이 비어 있습니다");
   const onesL = new Float32Array(L.length).fill(1);
   const onesR = new Float32Array(R.length).fill(1);
 
