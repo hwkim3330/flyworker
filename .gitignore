@@ -3,3 +3,4 @@ data/raw/
 .venv/
 .DS_Store
 package-lock.json
+docs/data/gta/

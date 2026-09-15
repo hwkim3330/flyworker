@@ -10,7 +10,18 @@
  *     모듈이 컨텍스트를 만들기 전에 getContext 를 가로채 preserveDrawingBuffer 를 켠다.
  */
 
-const GTA_DIR = "data/gta/";
+/**
+ * GTA1 자산은 우리가 배포하지 않는다.
+ *
+ * Carnage3D 엔진은 MIT 지만, .data 안에 들어 있는 GTA1 데모 자산은
+ * Rockstar/Take-Two 저작물이다. "무료 배포"와 "재배포 허가"는 다르고,
+ * Take-Two 는 GTA 팬 프로젝트에 공격적이다(2021년 re3/reVC DMCA).
+ *
+ * 다행히 원저자의 GitHub Pages 가 access-control-allow-origin: * 를 보낸다.
+ * 그래서 우리는 아무것도 싣지 않고 거기서 직접 받아온다.
+ * 사용자가 원저자의 데모 페이지를 여는 것과 동일한 일이 일어난다.
+ */
+const GTA_BASE = "https://codenamecpp.github.io/carnage3d/web/";
 
 /** 모듈이 WebGL 컨텍스트를 만들 때 프레임버퍼를 보존하도록 한 번만 가로챈다 */
 let patched = false;
@@ -50,17 +61,17 @@ export class Gta {
     this.sctx = this.scratch.getContext("2d", { willReadFrequently: true });
   }
 
-  load(baseUrl) {
+  load() {
     patchGetContext();
     const canvas = this.canvas;
     // 모듈이 컨텍스트를 만드는 동안 캔버스가 화면에 있어야 한다.
     // display:none 상태에서 만들면 WebGL 초기화가 실패하거나 프레임을 읽을 수 없다.
     canvas.classList.add("showing");
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error("GTA 로딩 시간 초과")), 90000);
+      const timer = setTimeout(() => reject(new Error("GTA1 load timed out")), 90000);
       window.Module = {
         canvas,
-        locateFile: (p) => baseUrl + GTA_DIR + p,
+        locateFile: (p) => GTA_BASE + p,
         print: () => {},
         printErr: (t) => { if (/error|fail/i.test(String(t))) console.warn("[gta]", t); },
         onRuntimeInitialized: () => {
@@ -72,8 +83,8 @@ export class Gta {
         setStatus: (t) => { this.status = t; },
       };
       const s = document.createElement("script");
-      s.src = baseUrl + GTA_DIR + "carnage3D.js";
-      s.onerror = () => { clearTimeout(timer); reject(new Error("carnage3D.js 로드 실패")); };
+      s.src = GTA_BASE + "carnage3D.js";
+      s.onerror = () => { clearTimeout(timer); reject(new Error("could not reach carnage3d upstream")); };
       document.body.appendChild(s);
     });
   }

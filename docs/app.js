@@ -342,7 +342,7 @@ async function preloadGta() {
   if (gta || gtaLoading) return;
   gtaLoading = true;
   try {
-    gta = await new Gta($("#gta")).load(new URL("./", import.meta.url).href);
+    gta = await new Gta($("#gta")).load();
     gta.byHuman = humanMode;
   } catch (e) {
     console.warn("Could not load GTA1:", e);
@@ -392,7 +392,7 @@ $("#toGta").onclick = async () => {
     gtaLoading = true;
     $("#toGta").textContent = "Loading…";
     try {
-      gta = await new Gta($("#gta")).load(new URL("./", import.meta.url).href);
+      gta = await new Gta($("#gta")).load();
     } catch (err) {
       $("#placeNote").textContent = "Could not load GTA1: " + (err.message || err);
       gtaLoading = false; $("#toGta").textContent = "GTA1"; return;
