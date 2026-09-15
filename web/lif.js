@@ -1,0 +1,131 @@
+/**
+ * 초파리 직원 — LIF(누출 적분 발화) 엔진
+ *
+ * Shiu et al. 커넥톰 기반 모델의 표준 파라미터를 따른다.
+ *   안정막전위 -52mV, 발화역치 -45mV, 불응기 2.2ms
+ *   막 시상수 20ms, 시냅스 시상수 5ms, 시냅스 1개당 0.275mV
+ *
+ * 한 개체 = Brain 인스턴스 하나. 커넥톰(읽기 전용)은 여러 개체가 공유한다.
+ */
+const V_REST = -52, V_TH = -45, V_RESET = -52;
+const TAU_M = 20, TAU_SYN = 5, REFRAC = 2.2;
+
+/**
+ * 시냅스 1개당 전위 상승(mV).
+ * Shiu et al. 원 모델은 0.275지만, 우리는 시냅스 5개 미만 연결을 쳐내
+ * 전체 시냅스의 62.7%만 남겼다. 남은 시냅스가 그만큼을 대신해야 하므로
+ * 0.275 / 0.627 ≈ 0.44 로 보정한다. 임의 조정이 아니라 가지치기 보정이다.
+ */
+const W_SYN = 0.44;
+
+export class Brain {
+  /** @param {{N:number,indptr:Uint32Array,indices:Uint32Array,weights:Int16Array}} c */
+  constructor(c, dt = 1.0, wsyn = W_SYN) {
+    this.wsyn = wsyn;
+    this.c = c;
+    this.dt = dt;
+    const N = c.N;
+    this.V = new Float32Array(N).fill(V_REST);
+    this.I = new Float32Array(N);        // 시냅스 전류
+    this.ext = new Float32Array(N);      // 외부 주입 전류
+    this.drive = new Float32Array(N);    // 강제 발화 확률/스텝 (감각 입력)
+    this.refr = new Float32Array(N);     // 남은 불응기
+    this.rate = new Float32Array(N);     // 발화율 추정 (지수 이동 평균)
+    this.spikes = new Uint32Array(N);    // 이번 스텝 발화 목록
+    this.nSpikes = 0;
+    this.steps = 0;
+    this.totalSpikes = 0;
+
+    this.decayM = Math.exp(-dt / TAU_M);
+    this.decayS = Math.exp(-dt / TAU_SYN);
+    this.decayR = Math.exp(-dt / 50);     // 발화율 EMA
+  }
+
+  /** 감각 뉴런에 전류를 준다 (0~1 정규화 값을 mV로) */
+  inject(indices, values, gain = 12) {
+    const ext = this.ext;
+    for (let i = 0; i < indices.length; i++) ext[indices[i]] = values[i] * gain;
+  }
+  clearInject() { this.ext.fill(0); }
+
+  /**
+   * 감각 뉴런을 정해진 발화율로 강제 발화시킨다.
+   * 커넥톰 모델에서 표준으로 쓰는 자극 방식이다 (Shiu et al.).
+   * @param values 0~1 정규화 세기, maxHz에 곱해진다
+   */
+  setDrive(indices, values, maxHz = 150) {
+    const d = this.drive, p = (maxHz * this.dt) / 1000;
+    for (let i = 0; i < indices.length; i++) d[indices[i]] = values[i] * p;
+  }
+  clearDrive() { this.drive.fill(0); }
+
+  step() {
+    const { indptr, indices, weights } = this.c;
+    const { V, I, ext, refr, rate } = this;
+    const N = this.c.N, dt = this.dt;
+    const dm = this.decayM, ds = this.decayS, dr = this.decayR;
+    const sp = this.spikes, ws = this.wsyn;
+    let n = 0;
+
+    const drv = this.drive;
+
+    // 1) 막전위 갱신 + 발화 판정
+    for (let i = 0; i < N; i++) {
+      if (refr[i] > 0) { refr[i] = refr[i] > dt ? refr[i] - dt : 0; V[i] = V_RESET; continue; }
+      // 감각 뉴런 강제 발화
+      if (drv[i] > 0 && Math.random() < drv[i]) {
+        V[i] = V_RESET; refr[i] = REFRAC; sp[n++] = i; continue;
+      }
+      const drive = I[i] + ext[i];
+      // 닫힌 형태 지수 갱신 (오일러보다 안정적)
+      V[i] = V_REST + (V[i] - V_REST) * dm + drive * (1 - dm);
+      if (V[i] >= V_TH) {
+        V[i] = V_RESET;
+        refr[i] = REFRAC;
+        sp[n++] = i;
+      }
+    }
+
+    // 2) 시냅스 전류 감쇠
+    for (let i = 0; i < N; i++) I[i] *= ds;
+
+    // 3) 발화 전파 (희소 — 활성 뉴런만 순회)
+    for (let s = 0; s < n; s++) {
+      const src = sp[s];
+      const a = indptr[src], b = indptr[src + 1];
+      for (let k = a; k < b; k++) I[indices[k]] += weights[k] * ws;
+    }
+
+    // 4) 발화율 EMA
+    for (let i = 0; i < N; i++) rate[i] *= dr;
+    for (let s = 0; s < n; s++) rate[sp[s]] += (1 - dr);
+
+    this.nSpikes = n;
+    this.totalSpikes += n;
+    this.steps++;
+    return n;
+  }
+
+  /** 뉴런 묶음의 평균 발화율 (스텝당 발화 확률) */
+  groupRate(idxArr) {
+    let s = 0;
+    for (let i = 0; i < idxArr.length; i++) s += this.rate[idxArr[i]];
+    return idxArr.length ? s / idxArr.length : 0;
+  }
+
+  /** 뉴런 묶음의 평균 발화율을 Hz로 */
+  groupHz(idxArr) { return this.groupRate(idxArr) * 1000 / this.dt; }
+
+  /** 이번 스텝에 이 묶음에서 몇 개가 발화했나 */
+  countSpikes(set) {
+    let n = 0;
+    for (let s = 0; s < this.nSpikes; s++) if (set.has(this.spikes[s])) n++;
+    return n;
+  }
+
+  reset() {
+    this.V.fill(V_REST); this.I.fill(0); this.ext.fill(0); this.drive.fill(0);
+    this.refr.fill(0); this.rate.fill(0);
+    this.steps = 0; this.totalSpikes = 0;
+  }
+}
