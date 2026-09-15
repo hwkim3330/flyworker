@@ -9,6 +9,8 @@
  * "자기가 만든 장난감에서만 되는 것 아니냐"에 답하기 위해서다.
  */
 
+import { normalizeField } from "./vision.js";
+
 const KEYS = ["KEY_LEFTARROW", "KEY_RIGHTARROW", "KEY_UPARROW", "KEY_DOWNARROW",
               "KEY_FIRE", "KEY_USE", "KEY_ENTER", "KEY_ESCAPE",
               "KEY_STRAFE_L", "KEY_STRAFE_R", "KEY_SHIFT", "KEY_TAB"];
@@ -127,12 +129,7 @@ export class Doom {
         out[gy * gw + gx] = n ? s / n / 255 : 0;
       }
     }
-    // 대비 정규화 (라미나의 측면억제에 해당)
-    let mean = 0;
-    for (let i = 0; i < out.length; i++) mean += out[i];
-    mean /= out.length;
-    for (let i = 0; i < out.length; i++)
-      out[i] = Math.max(0, Math.min(1, 0.25 + (out[i] - mean) * 2.4));
+    normalizeField(out, gw, gh);
     return out;
   }
 

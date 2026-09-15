@@ -8,6 +8,8 @@
  * BUGS 에 적어두되, 감지기는 이 정보를 보지 않고 증상만으로 찾아낸다.
  */
 
+import { normalizeField } from "./vision.js";
+
 export const BUGS = {
   B1: { name: "모서리 끼임", desc: "특정 모서리에서 충돌 처리가 어긋나 빠져나올 수 없다" },
   B2: { name: "렌더 정지", desc: "특정 구역에 들어가면 화면 갱신이 멈춘다" },
@@ -187,14 +189,7 @@ export class Game {
       }
     }
 
-    // 대비 정규화 — 평균을 빼고 펼친다.
-    // 실제 초파리 라미나가 측면억제로 하는 일과 같다. 이걸 하지 않으면
-    // 전체가 어두울 때 좌우 차이가 묻혀 뇌가 방향을 읽지 못한다.
-    let mean = 0;
-    for (let i = 0; i < out.length; i++) mean += out[i];
-    mean /= out.length;
-    for (let i = 0; i < out.length; i++)
-      out[i] = Math.max(0, Math.min(1, 0.25 + (out[i] - mean) * 2.4));
+    normalizeField(out, gw, gh);
     return out;
   }
 

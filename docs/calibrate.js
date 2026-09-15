@@ -93,12 +93,37 @@ export async function calibrate(brain, eye, dn, opt = {}) {
  * 그래야 "왼쪽 채널이 원래 더 세게 운다" 같은 개체차가 상쇄되고,
  * 전체 밝기가 오르내려도 좌우 비율만 남는다.
  */
-export function steering(brain, cal, gain = 1.6) {
+export function steering(brain, cal, gain = 4.0, adapt = 1 / 150) {
   const l = brain.groupHz(cal.leftCh) / cal.baseL;
   const r = brain.groupHz(cal.rightCh) / cal.baseR;
   const s = l + r;
   if (s < 0.05) return 0;                      // 활동이 너무 적으면 방향을 말하지 않는다
-  return Math.max(-1, Math.min(1, ((r - l) / s) * gain));
+  const raw = (r - l) / s;
+
+  /*
+   * 적응형 기준선.
+   *
+   * 개체마다 좌우 채널의 기저 활동이 다르다. 수습 교육에서 잰 값으로 나눠도
+   * 실제 게임의 자극 세기가 교육 때와 달라 편향이 남는다. 실측에서 조향이
+   * 항상 +0.5 근처에 붙어 초파리가 제자리를 빙빙 돌았다.
+   *
+   * 그래서 자기 자신의 느린 평균을 빼고 "평소와 얼마나 다른가"만 본다.
+   * 감각 적응과 같은 원리다. 일정한 치우침은 스스로 사라지고
+   * 시야가 바뀌어 생긴 변화만 조향으로 남는다.
+   */
+  if (cal._ema === undefined) cal._ema = raw;
+  cal._ema += (raw - cal._ema) * adapt;
+  const dev = raw - cal._ema;
+
+  /*
+   * 짧은 평활. 한 샘플의 잡음 표준편차가 0.08이라 그대로 쓰면 방향이 떨린다.
+   * 10샘플쯤 평균 내면 0.025 수준으로 내려가 신호가 드러난다.
+   * 초파리의 조향도 개별 스파이크가 아니라 집단의 시간 평균으로 결정된다.
+   */
+  if (cal._sm === undefined) cal._sm = 0;
+  cal._sm += (dev - cal._sm) * 0.12;
+
+  return Math.max(-1, Math.min(1, cal._sm * gain));
 }
 
 /** 전진 강도 0~1 — 활성 하행뉴런이 평소 대비 얼마나 우는가 */
