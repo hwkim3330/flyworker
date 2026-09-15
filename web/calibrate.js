@@ -48,6 +48,14 @@ export async function calibrate(brain, eye, dn, opt = {}) {
   const onlyL = await run("L");
   const onlyR = await run("R");
 
+  // 개체 고유 편향: 좌우를 똑같이 비춰도 한쪽으로 치우친다.
+  // 이 값을 빼주지 않으면 편향이 좌우 신호를 덮어버려 게임에서 한쪽으로만 돈다.
+  brain.reset();
+  brain.setDrive(L, onesL, hz);
+  brain.setDrive(R, onesR, hz);
+  for (let t = 0; t < steps; t++) brain.step();
+  const balanced = dn.map((i) => brain.rate[i] * 1000 / brain.dt);
+
   const scored = dn.map((ci, k) => ({ ci, diff: onlyL[k] - onlyR[k] }));
   scored.sort((a, b) => b.diff - a.diff);
 
@@ -57,20 +65,44 @@ export async function calibrate(brain, eye, dn, opt = {}) {
   // 활동적인 하행뉴런 (버튼 채널 후보)
   const active = dn.filter((ci, k) => Math.max(onlyL[k], onlyR[k]) > 1);
 
+  // 균형 조명에서의 좌우 채널 세기 → 편향
+  const idxOf = new Map(dn.map((ci, k) => [ci, k]));
+  const chMean = (arr) => {
+    let s = 0;
+    for (const ci of arr) s += balanced[idxOf.get(ci)] || 0;
+    return arr.length ? s / arr.length : 0;
+  };
+  // 각 채널이 "균형 조명일 때" 내는 값. 이걸 기준으로 나눠 쓰면
+  // 개체마다 다른 채널 이득 차이가 자동으로 상쇄된다.
+  const baseL = Math.max(1e-3, chMean(leftCh));
+  const baseR = Math.max(1e-3, chMean(rightCh));
+  const baseActive = Math.max(1e-3, chMean(active));
+
   brain.reset();
   return {
-    leftCh, rightCh, active,
+    leftCh, rightCh, active, baseL, baseR, baseActive,
     quality: leftCh.length >= 5 && rightCh.length >= 5 ? "good" : "weak",
     span: scored.length ? Math.round(scored[0].diff - scored[scored.length - 1].diff) : 0,
   };
 }
 
 /**
- * 조향 편향을 -1(좌) ~ +1(우)로 돌려준다.
+ * 조향을 -1(좌) ~ +1(우)로 돌려준다.
+ *
+ * 각 채널을 자기 자신의 균형 조명 반응(baseL/baseR)으로 나눈 뒤 비교한다.
+ * 그래야 "왼쪽 채널이 원래 더 세게 운다" 같은 개체차가 상쇄되고,
+ * 전체 밝기가 오르내려도 좌우 비율만 남는다.
  */
-export function steering(brain, cal) {
-  const l = brain.groupHz(cal.leftCh);
-  const r = brain.groupHz(cal.rightCh);
+export function steering(brain, cal, gain = 1.6) {
+  const l = brain.groupHz(cal.leftCh) / cal.baseL;
+  const r = brain.groupHz(cal.rightCh) / cal.baseR;
   const s = l + r;
-  return s < 1e-6 ? 0 : (r - l) / s;
+  if (s < 0.05) return 0;                      // 활동이 너무 적으면 방향을 말하지 않는다
+  return Math.max(-1, Math.min(1, ((r - l) / s) * gain));
+}
+
+/** 전진 강도 0~1 — 활성 하행뉴런이 평소 대비 얼마나 우는가 */
+export function thrust(brain, cal) {
+  const a = brain.groupHz(cal.active) / cal.baseActive;
+  return Math.max(0.25, Math.min(1, a * 0.8));
 }

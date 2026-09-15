@@ -87,7 +87,12 @@ export class QA {
   }
 
   report(code, st, detail) {
-    const key = `${code}:${Math.round(st.x / 16)}:${Math.round(st.y / 16)}`;
+    // 위치가 의미 있는 버그(끼임·맵이탈)는 위치까지 열쇠에 넣고,
+    // 전역 상태 버그(문 잠김·정지·진행불가)는 코드만으로 한 번만 보고한다.
+    const positional = code === "STUCK" || code === "OOB";
+    const key = positional
+      ? `${code}:${Math.round(st.x / 16)}:${Math.round(st.y / 16)}`
+      : code;
     if (this.seen.has(key)) return;
     this.seen.add(key);
     const r = RULES[code];

@@ -186,6 +186,15 @@ export class Game {
         out[gy * gw + gx] = Math.max(0, Math.min(1, v));
       }
     }
+
+    // 대비 정규화 — 평균을 빼고 펼친다.
+    // 실제 초파리 라미나가 측면억제로 하는 일과 같다. 이걸 하지 않으면
+    // 전체가 어두울 때 좌우 차이가 묻혀 뇌가 방향을 읽지 못한다.
+    let mean = 0;
+    for (let i = 0; i < out.length; i++) mean += out[i];
+    mean /= out.length;
+    for (let i = 0; i < out.length; i++)
+      out[i] = Math.max(0, Math.min(1, 0.25 + (out[i] - mean) * 2.4));
     return out;
   }
 

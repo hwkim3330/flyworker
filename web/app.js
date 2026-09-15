@@ -64,7 +64,7 @@ function onMsg(emp, m) {
     renderEmps();
   }
   else if (m.t === "motor") {
-    emp.steer = m.steer; emp.thrust = Math.max(0.25, Math.min(1, m.drive));
+    emp.steer = m.steer; emp.thrust = m.drive;
     emp.dnHz = m.hz; emp.spikes = m.totalSpikes; emp.brainMs = m.brainMs;
   }
   else if (m.t === "error") { emp.phase = "오류"; emp.detail = m.msg; renderEmps(); }

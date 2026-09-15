@@ -7,7 +7,7 @@
  */
 import { decodeBrain } from "./brain.js";
 import { Brain } from "./lif.js";
-import { calibrate, steering } from "./calibrate.js";
+import { calibrate, steering, thrust } from "./calibrate.js";
 
 let brain = null, meta = null, cal = null;
 let id = "?", running = false;
@@ -99,7 +99,7 @@ function loop() {
     post({
       t: "motor", id,
       steer: steering(brain, cal),
-      drive: brain.groupHz(cal.active) / 100,      // 0~1 수준의 전진 강도
+      drive: thrust(brain, cal),
       spikes: brain.nSpikes,
       hz: brain.groupHz(meta.descendingAll),
       totalSpikes: brain.totalSpikes,
