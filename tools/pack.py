@@ -4,7 +4,7 @@
 FlyWire v783 (CC-BY 4.0) 연결성 15.1M쌍 중 시냅스 5개 이상만 남겨
 CSR(Compressed Sparse Row)로 만들고, 행 안에서 대상 인덱스를 델타+varint로 줄인다.
 
-출력  web/data/brain.bin  (gzip은 서버가 담당)
+출력  docs/data/brain.bin  (gzip은 서버가 담당)
   [0:4]   magic 'FLY1'
   [4:8]   uint32 N   뉴런 수
   [8:12]  uint32 M   연결 수
@@ -64,9 +64,9 @@ print(f"varint 영역 {len(varint)/1e6:.2f} MB  (평균 {len(varint)/M:.2f} B/�
 
 blob = (b'FLY1' + struct.pack('<III', N, M, len(varint))
         + indptr.tobytes() + varint + sw.tobytes())
-p = pathlib.Path('web/data/brain.bin'); p.write_bytes(blob)
+p = pathlib.Path('docs/data/brain.bin'); p.write_bytes(blob)
 gz = gzip.compress(blob, 9)
-pathlib.Path('web/data/brain.bin.gz').write_bytes(gz)
+pathlib.Path('docs/data/brain.bin.gz').write_bytes(gz)
 print(f"원본 {len(blob)/1e6:.2f} MB  →  gzip {len(gz)/1e6:.2f} MB")
 
 # 단순 uint32 방식과 비교

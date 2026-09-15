@@ -94,9 +94,9 @@ LA>ME 라미나→수질 8,029뉴런
 ```bash
 python3 -m venv .venv && .venv/bin/pip install pandas pyarrow numpy
 bash tools/00_fetch.sh          # 원본 데이터 (~135MB)
-.venv/bin/python tools/pack.py  # 커넥톰 → web/data/brain.bin
-.venv/bin/python tools/meta.py  # 뉴런 역할 → web/data/meta.json
-python3 -m http.server 8877 --directory web
+.venv/bin/python tools/pack.py  # 커넥톰 → docs/data/brain.bin
+.venv/bin/python tools/meta.py  # 뉴런 역할 → docs/data/meta.json
+python3 -m http.server 8877 --directory docs
 ```
 
 ## 출처와 라이선스

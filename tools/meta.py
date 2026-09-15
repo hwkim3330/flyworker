@@ -76,7 +76,7 @@ meta = {
     "descendingAll": sorted(dn['ci'].tolist()),
     "visualProjection": sorted(vpn['ci'].tolist()),
 }
-p = pathlib.Path('web/data/meta.json')
+p = pathlib.Path('docs/data/meta.json')
 p.write_text(json.dumps(meta, separators=(',', ':')))
 print(f"meta.json {p.stat().st_size/1e6:.2f} MB")
 for s, v in meta["eye"].items():
