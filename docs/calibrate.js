@@ -93,7 +93,7 @@ export async function calibrate(brain, eye, dn, opt = {}) {
  * 그래야 "왼쪽 채널이 원래 더 세게 운다" 같은 개체차가 상쇄되고,
  * 전체 밝기가 오르내려도 좌우 비율만 남는다.
  */
-export function steering(brain, cal, gain = 4.0, adapt = 1 / 150) {
+export function steering(brain, cal, gain = 2.0, adapt = 1 / 40) {
   const l = brain.groupHz(cal.leftCh) / cal.baseL;
   const r = brain.groupHz(cal.rightCh) / cal.baseR;
   const s = l + r;
@@ -107,9 +107,14 @@ export function steering(brain, cal, gain = 4.0, adapt = 1 / 150) {
    * 실제 게임의 자극 세기가 교육 때와 달라 편향이 남는다. 실측에서 조향이
    * 항상 +0.5 근처에 붙어 초파리가 제자리를 빙빙 돌았다.
    *
-   * 그래서 자기 자신의 느린 평균을 빼고 "평소와 얼마나 다른가"만 본다.
-   * 감각 적응과 같은 원리다. 일정한 치우침은 스스로 사라지고
-   * 시야가 바뀌어 생긴 변화만 조향으로 남는다.
+   * 그래서 자기 자신의 평균을 빼고 "평소와 얼마나 다른가"만 본다.
+   * 감각 적응과 같은 원리다. 일정한 치우침은 스스로 사라진다.
+   *
+   * 적응 시간과 이득은 탐색 범위를 기준으로 실측해 정했다.
+   * 1500프레임 4시드 평균 방문 칸 수:
+   *   gain 4.0 / adapt 1/150  →  16.5칸,  회전 3.7바퀴  (제자리에서 돌았다)
+   *   gain 2.0 / adapt 1/40   →  23.8칸,  회전 1.3바퀴
+   * QA 퍼저에게 중요한 것은 목표 도달이 아니라 얼마나 넓게 두들기느냐다.
    */
   if (cal._ema === undefined) cal._ema = raw;
   cal._ema += (raw - cal._ema) * adapt;

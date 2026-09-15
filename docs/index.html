@@ -200,7 +200,12 @@
           A biological network sits in between — structured, non-deterministic input at
           <b>zero inference cost, forever</b>.<br><br>
           The lab game has four bugs planted in it. The detector does not know where they are;
-          it only watches for symptoms. Six findings per ten runs, three of the four planted bugs.
+          it only watches for symptoms.<br><br>
+          Not reaching the goal is a limit of the model. <b>Spinning in a corner was our bug.</b>
+          Residual bias and saturation in the steering signal kept the fly circling in one place.
+          Retuning adaptation and gain against <b>map coverage</b> — not against goal-seeking —
+          took it from 16 visited cells to 30, from 8.3 spins to 1.9, and from
+          6 findings per ten runs to 18. Eighteen findings per ten runs, three of the four planted bugs.
         </div>
       </details>
 
