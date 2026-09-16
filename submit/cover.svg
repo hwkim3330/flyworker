@@ -14,31 +14,35 @@
   <!-- 왼쪽: 정책 비교 (측정) -->
   <rect x="100" y="410" width="900" height="330" rx="18" fill="#141416" stroke="#ffffff" stroke-opacity="0.09"/>
   <text x="132" y="458" font-family="Helvetica,Arial" font-size="24" font-weight="600" fill="#f5f5f7">Policies, measured</text>
-  <text x="392" y="458" font-family="Helvetica,Arial" font-size="18" fill="#6e6e73">24,000 frames each, same game, same detector</text>
+  <text x="392" y="458" font-family="Helvetica,Arial" font-size="18" fill="#6e6e73">24,000 frames each · seeded · averaged over repeats</text>
   <g font-family="Helvetica,Arial" font-size="19">
     <text x="132" y="506" fill="#6e6e73">Policy</text>
-    <text x="520" y="506" fill="#6e6e73">Coverage</text>
-    <text x="700" y="506" fill="#6e6e73">Symptom types</text>
+    <text x="520" y="506" fill="#6e6e73">Coverage · range</text>
+    <text x="760" y="506" fill="#6e6e73">Types</text>
     <line x1="132" y1="522" x2="968" y2="522" stroke="#ffffff" stroke-opacity="0.09"/>
 
     <text x="132" y="562" fill="#30d158" font-weight="600">Fly connectome</text>
-    <text x="520" y="562" fill="#30d158" font-family="Menlo,monospace">35%</text>
-    <text x="700" y="562" fill="#30d158" font-family="Menlo,monospace">2</text>
-    <text x="800" y="562" fill="#6e6e73">STUCK, OOB</text>
+    <text x="520" y="562" fill="#30d158" font-family="Menlo,monospace">34%</text>
+    <text x="620" y="562" font-size="16" fill="#6e6e73" font-family="Menlo,monospace">28–41</text>
+    <text x="760" y="562" fill="#30d158" font-family="Menlo,monospace">2.7</text>
+    <text x="840" y="562" font-size="17" fill="#6e6e73">loses on both</text>
 
     <text x="132" y="606" fill="#a1a1a6">Smoothed noise</text>
-    <text x="520" y="606" fill="#f5f5f7" font-family="Menlo,monospace">55%</text>
-    <text x="700" y="606" fill="#f5f5f7" font-family="Menlo,monospace">5</text>
-    <text x="800" y="606" fill="#6e6e73">all five</text>
+    <text x="520" y="606" fill="#f5f5f7" font-family="Menlo,monospace">61%</text>
+    <text x="620" y="606" font-size="16" fill="#6e6e73" font-family="Menlo,monospace">57–66</text>
+    <text x="760" y="606" fill="#f5f5f7" font-family="Menlo,monospace">3.2</text>
+    <text x="840" y="606" font-size="17" fill="#6e6e73">all five seen</text>
 
     <text x="132" y="650" fill="#a1a1a6">Uniform noise</text>
-    <text x="520" y="650" fill="#f5f5f7" font-family="Menlo,monospace">58%</text>
-    <text x="700" y="650" fill="#f5f5f7" font-family="Menlo,monospace">3</text>
+    <text x="520" y="650" fill="#f5f5f7" font-family="Menlo,monospace">50%</text>
+    <text x="620" y="650" font-size="16" fill="#6e6e73" font-family="Menlo,monospace">46–52</text>
+    <text x="760" y="650" fill="#f5f5f7" font-family="Menlo,monospace">3.6</text>
 
     <text x="132" y="694" fill="#a1a1a6">Straight ahead</text>
     <text x="520" y="694" fill="#f5f5f7" font-family="Menlo,monospace">5%</text>
-    <text x="700" y="694" fill="#f5f5f7" font-family="Menlo,monospace">1</text>
-    <text x="800" y="694" font-size="18" fill="#6e6e73">95 findings, one freeze</text>
+    <text x="620" y="694" font-size="16" fill="#6e6e73" font-family="Menlo,monospace">5–5</text>
+    <text x="760" y="694" fill="#f5f5f7" font-family="Menlo,monospace">1.0</text>
+    <text x="840" y="694" font-size="17" fill="#6e6e73">one freeze ×95</text>
   </g>
 
   <!-- 오른쪽: 파이프라인 -->
@@ -64,9 +68,9 @@
   <!-- 하단 3칸 -->
   <g font-family="Helvetica,Arial">
     <rect x="100" y="782" width="548" height="150" rx="18" fill="#141416" stroke="#ffffff" stroke-opacity="0.09"/>
-    <text x="132" y="828" font-size="23" font-weight="600" fill="#f5f5f7">Three workplaces</text>
+    <text x="132" y="828" font-size="23" font-weight="600" fill="#f5f5f7">Four workplaces</text>
     <text x="132" y="864" font-size="18" fill="#86868b">GTA1 · DOOM · a lab game with four</text>
-    <text x="132" y="892" font-size="18" fill="#86868b">bugs deliberately planted in it</text>
+    <text x="132" y="892" font-size="18" fill="#86868b">planted bugs · and your own game</text>
 
     <rect x="686" y="782" width="548" height="150" rx="18" fill="#141416" stroke="#ffffff" stroke-opacity="0.09"/>
     <text x="718" y="828" font-size="23" font-weight="600" fill="#f5f5f7">Bug count is a fake metric</text>

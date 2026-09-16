@@ -50,6 +50,26 @@ const make = {
     return () => { s += (r() * 2 - 1 - s) * 0.08; t += ((0.35 + r() * 0.65) - t) * 0.05;
       return [Math.max(-1, Math.min(1, s * 3)), t]; }; },
   straight: () => () => [0, 0.8],
+
+  /**
+   * 섞은 정책 — 초파리 조향에 평활 난수를 더한다.
+   * 초파리가 단독으로 지는 것은 쟀다. 그러면 남는 질문은
+   * "커넥톰이 아무것도 보태지 않는가"다. 프레임워크가 정책을 갈아끼울 수
+   * 있으니 이건 재서 답할 수 있는 질문이다.
+   */
+  hybrid: (seed) => { const r = mulberry32(seed); let n = 0, t = 0.7;
+    b.reset(); delete cal._ema; delete cal._sm;
+    return (g, vis) => {
+      g.visionField(GW, GH, vis);
+      for (const s of ['left', 'right']) { const m = em[s];
+        for (let i = 0; i < m.ci.length; i++) m.buf[i] = vis[m.cell[i]];
+        b.setDrive(m.ci, m.buf, 150); }
+      for (let k = 0; k < 8; k++) b.step();
+      n += (r() * 2 - 1 - n) * 0.08;
+      t += ((0.35 + r() * 0.65) - t) * 0.05;
+      const fly = steering(b, cal);
+      return [Math.max(-1, Math.min(1, fly * 0.6 + n * 3 * 0.4)), t];
+    }; },
 };
 
 function shift(id, rep, restart = true) {
@@ -59,7 +79,7 @@ function shift(id, rep, restart = true) {
   while (used < BUDGET) {
     const seed = 1000 + (sn++) * 37;
     const g = new Game(seed), qa = new QA({ seed, W: g.W, H: g.H }), vis = new Float32Array(GW * GH);
-    if (id === 'fly') { b.reset(); delete cal._ema; delete cal._sm; }
+    if (id === 'fly' || id === 'hybrid') { b.reset(); delete cal._ema; delete cal._sm; }
     runs++;
     for (let f = 0; f < MAXRUN && used < BUDGET; f++, used++) {
       const [sv, tv] = fn(g, vis);
@@ -85,9 +105,9 @@ const rng = (a) => `${Math.min(...a).toFixed(0)}–${Math.max(...a).toFixed(0)}`
 console.log(`같은 프레임워크 · 같은 계산량(${BUDGET.toLocaleString()}프레임) · 정책만 교체`);
 console.log(`난수는 시드 고정. 회차마다 시드와 판 순서가 다르다.\n`);
 console.log("정책        회차  탐색률(평균)   범위      증상종류(평균)  전체 관측 종류");
-const REPS = { fly: 3, uniform: 5, smooth: 5, straight: 3 };
+const REPS = { fly: 3, uniform: 5, smooth: 5, straight: 3, hybrid: 3 };
 const out = {};
-for (const id of ['fly', 'smooth', 'uniform', 'straight']) {
+for (const id of ['fly', 'hybrid', 'smooth', 'uniform', 'straight']) {
   const rs = [];
   for (let r = 0; r < REPS[id]; r++) rs.push(shift(id, r));
   const pcts = rs.map((x) => x.pct), kinds = rs.map((x) => Object.keys(x.codes).length);
@@ -97,11 +117,13 @@ for (const id of ['fly', 'smooth', 'uniform', 'straight']) {
   console.log(`${id.padEnd(10)} ${String(rs.length).padStart(4)} ${String(out[id].pct).padStart(10)}% ${out[id].pctRange.padStart(10)} ${String(out[id].kinds).padStart(13)}   ${union.join(' ')}`);
 }
 
-console.log("\n=== 끼임 재시작의 효과 (초파리, 3회차) ===");
-for (const [label, on] of [['재시작 함', true], ['재시작 안 함', false]]) {
-  const rs = [0, 1, 2].map((r) => shift('fly', r, on));
-  console.log(`${label.padEnd(12)} 탐색률 ${mean(rs.map(x=>x.pct)).toFixed(0)}%  ` +
-    `증상종류 ${mean(rs.map(x=>Object.keys(x.codes).length)).toFixed(1)}  ` +
-    `버그 ${mean(rs.map(x=>x.bugs)).toFixed(0)}건  판수 ${mean(rs.map(x=>x.runs)).toFixed(0)}`);
+if (process.argv.includes('--restart')) {
+  console.log("\n=== 끼임 재시작의 효과 (초파리, 3회차) ===");
+  for (const [label, on] of [['재시작 함', true], ['재시작 안 함', false]]) {
+    const rs = [0, 1, 2].map((r) => shift('fly', r, on));
+    console.log(`${label.padEnd(12)} 탐색률 ${mean(rs.map(x=>x.pct)).toFixed(0)}%  ` +
+      `증상종류 ${mean(rs.map(x=>Object.keys(x.codes).length)).toFixed(1)}  ` +
+      `버그 ${mean(rs.map(x=>x.bugs)).toFixed(0)}건  판수 ${mean(rs.map(x=>x.runs)).toFixed(0)}`);
+  }
 }
 console.log("\nJSON " + JSON.stringify(out));
