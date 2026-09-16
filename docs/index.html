@@ -176,6 +176,11 @@ table.cmp tr.hi td{color:var(--accent)}
           We publish this because the product is the framework, not the policy.<br><br>
           <b>Bug count is a fake metric.</b> "Straight ahead" leads on count — 95 findings, every
           one of them the same freeze. Coverage and symptom <i>diversity</i> are what matter.<br><br>
+          <b>Does the connectome add anything on top of noise?</b> We put it to the framework.
+          <i>Fly + noise</i> covers 53% (49–56); the <i>same noise sequence with the fly term
+          removed</i> covers 56% (52–63) — a paired control, identical seeds. The connectome
+          costs 3 points of coverage and buys 0.4 symptom types, both inside the spread.
+          <b>It adds nothing we can measure.</b><br><br>
           <b>These numbers reproduce.</b> A single run of a random policy swings between 55% and
           78%, so a single measurement is worthless. The noise is seeded and averaged over repeats;
           <span class="mono">node policy_bench.mjs</span> prints this table.

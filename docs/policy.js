@@ -42,7 +42,7 @@ export const POLICIES = {
    */
   hybrid: {
     label: "Fly + noise",
-    note: "The connectome's steering with smoothed noise on top. Measured against the same noise alone.",
+    note: "The connectome's steering with smoothed noise on top. Against the same noise alone: −3%p coverage. The connectome adds nothing measurable.",
     make: () => {
       let n = 0, t = 0.7;
       return (flySteer = 0) => {
@@ -74,6 +74,7 @@ export const POLICIES = {
  */
 export const MEASURED = [
   { id: "fly",      reps: 3, pct: 42, range: "35–50", kinds: "2.7", types: "STUCK, OOB, NOPROG, DOORLOCK" },
+  { id: "hybrid",   reps: 3, pct: 53, range: "49–56", kinds: "3.7", types: "all five" },
   { id: "smooth",   reps: 5, pct: 61, range: "57–66", kinds: "3.2", types: "all five" },
   { id: "uniform",  reps: 5, pct: 50, range: "46–52", kinds: "3.6", types: "STUCK, OOB, DOORLOCK, FREEZE" },
   { id: "straight", reps: 3, pct: 5,  range: "5–5",   kinds: "1.0", types: "FREEZE only" },
