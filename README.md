@@ -115,6 +115,17 @@
 「Download report」를 누르면 **자체 완결형 HTML 한 장**이 나옵니다.
 발견 순간의 화면(PNG)과 재현 파일(JSON)이 안에 들어 있어 인터넷 없이 열립니다.
 
+그 파일이 **앱 밖에서도** 되살아나는지 따로 확인할 수 있습니다.
+브라우저 안에서 Replay 버튼이 도는 것과, 개발자가 받아간 파일이 다른 곳에서
+도는 것은 다른 주장이고, QA 도구의 값어치는 후자에 있습니다.
+
+```bash
+node verify_repro.mjs ~/Downloads/flyworker_report_2026-09-16.html
+#   STUCK  630프레임 → (144,99) vs 기록 (144,99)  일치
+#   STUCK  751프레임 → (179,20) vs 기록 (179,20)  일치
+#   2/2 일치
+```
+
 ## 어떻게 게임을 하는가
 
 ```
@@ -168,6 +179,7 @@ bash tools/00_fetch.sh          # 원본 데이터 (~135MB)
 python3 -m http.server 8877 --directory docs
 
 node policy_bench.mjs           # 위 정책 비교표를 다시 재본다
+node verify_repro.mjs <리포트>  # 내보낸 재현 파일이 앱 밖에서 되살아나는지 확인
 ```
 
 ## 출처와 라이선스
