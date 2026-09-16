@@ -13,6 +13,7 @@ import { Byo } from "./byo.js";
 import { normalizeField } from "./vision.js";
 import { POLICIES, MEASURED } from "./policy.js";
 import { QA, replay } from "./qa.js";
+import { buildReport } from "./report.js";
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g,
@@ -34,12 +35,28 @@ const doomQA = { last: 0, same: 0, recent: [], reported: new Set() };
 let byo = null, byoEmp = null;
 const byoQA = { last: 0, same: 0, recent: [], reported: new Set() };
 let byoRestarting = false;
+const played = new Set();                     // 이번 세션에 실제로 돈 근무지
 
 // 3D 뇌
 let b3d = null, lastFrameAt = performance.now();
 new Brain3D($("#b3d")).load(new URL("./data/pos.bin", import.meta.url).href)
   .then((v) => { b3d = v; addEventListener("resize", () => b3d.resize()); })
   .catch((e) => console.warn("Could not start the 3D brain:", e));
+
+/* 발견 순간의 화면을 증거로 남긴다. 리포트에 그대로 들어간다.
+   퍼저의 산출물은 화면이 아니라 문서이고, 증거 없는 버그 리포트는 재작업을 부른다. */
+const shotC = document.createElement("canvas");
+const shotX = shotC.getContext("2d");
+function evidence(src, w, h) {
+  const k = Math.min(1, 320 / w);
+  shotC.width = Math.max(1, Math.round(w * k));
+  shotC.height = Math.max(1, Math.round(h * k));
+  try {
+    if (typeof src === "function") src(shotX);                // 게임이 직접 그린다
+    else shotX.drawImage(src, 0, 0, shotC.width, shotC.height);
+    return shotC.toDataURL("image/png");
+  } catch { return null; }                                    // 오염된 캔버스 — 증거 없이 간다
+}
 
 const gctx = $("#game").getContext("2d", { willReadFrequently: true });
 const dctx = $("#doom").getContext("2d");
@@ -121,7 +138,9 @@ function tick() {
       byo.drive(e.steer, e.thrust);
       byo.vision(GW, GH, e.vision, normalizeField);
       e.worker.postMessage({ t: "vision", frame: e.vision });
-      checkScreenQA(e, byo.screenHash(), byoQA, byo.label, byo.frameNo);
+      played.add(byo.label);
+      checkScreenQA(e, byo.screenHash(), byoQA, byo.label, byo.frameNo,
+        () => evidence(byo.canvas, byo.canvas.width, byo.canvas.height));
       // 화면이 죽은 표적을 계속 두드려도 새 증상은 안 나온다. 새 판을 연다.
       if (byoQA.same > 180 && !byoRestarting) {
         byoRestarting = true;
@@ -139,7 +158,9 @@ function tick() {
       gta.drive(e.steer, e.thrust);
       gta.vision(GW, GH, e.vision, normalizeField);
       e.worker.postMessage({ t: "vision", frame: e.vision });
-      checkScreenQA(e, gta.screenHash(), gtaQA, "GTA1", gta.frame);
+      played.add("GTA1");
+      checkScreenQA(e, gta.screenHash(), gtaQA, "GTA1", gta.frame,
+        () => evidence($("#gta"), 640, 400));
       continue;
     }
 
@@ -149,7 +170,9 @@ function tick() {
       doom.tick();
       doom.vision(GW, GH, e.vision);
       e.worker.postMessage({ t: "vision", frame: e.vision });
-      checkScreenQA(e, doom.screenHash(), doomQA, "DOOM", doom.frame);
+      played.add("DOOM");
+      checkScreenQA(e, doom.screenHash(), doomQA, "DOOM", doom.frame,
+        () => evidence((ctx) => doom.draw(ctx), 320, 200));
       continue;
     }
 
@@ -162,7 +185,9 @@ function tick() {
     let wedged = false;
     if (e.qa.findings.length > before) {
       const fresh = e.qa.findings.slice(before);
-      for (const f of fresh) { f.by = e.name; e.bugs.push(f); totalBugs++; }
+      const shot = evidence((ctx) => g.draw(ctx), 320, 240);
+      for (const f of fresh) { f.by = e.name; f.shot = shot; e.bugs.push(f); totalBugs++; }
+      played.add("Lab");
       // 끼었거나 더 진행하지 못한다고 확인되면 그 판에서 더 볼 것이 없다.
       // 기록만 남기고 새 판으로 넘어간다. 실제 퍼저가 하는 일이다.
       // 같은 계산량에서 버그 13건 → 60건, 탐색률 15% → 28% (24,000프레임 실측)
@@ -190,7 +215,7 @@ function tick() {
  * 외부 게임에는 심어둔 버그가 없다. 내부 상태도 못 본다.
  * 그래서 화면 해시만으로 정지·반복을 본다.
  */
-function checkScreenQA(e, h, st, placeName, frame) {
+function checkScreenQA(e, h, st, placeName, frame, grab) {
   if (h === st.last) st.same++; else { st.same = 0; st.last = h; }
   st.recent.push(h);
   if (st.recent.length > 240) st.recent.shift();
@@ -198,7 +223,7 @@ function checkScreenQA(e, h, st, placeName, frame) {
   const add = (code, label, sev, detail) => {
     if (st.reported.has(code)) return;
     st.reported.add(code);
-    e.bugs.push({ code, label, sev, detail, frame, at: { x: 0, y: 0 },
+    e.bugs.push({ code, label, sev, detail, frame, at: { x: 0, y: 0 }, shot: grab ? grab() : null,
                   by: e.name, ts: Date.now(), repro: { seed: 0, inputs: [] }, place: placeName });
     totalBugs++; renderBugs();
   };
@@ -315,6 +340,7 @@ function renderEmpsLive() {
 function renderBugs() {
   const all = company.flatMap((e) => e.bugs).sort((a, b) => b.ts - a.ts).slice(0, 30);
   $("#bugN").textContent = all.length ? `(${all.length})` : "";
+  $("#report").disabled = !all.length;
   if (!all.length) return;
   $("#bugs").innerHTML = all.map((f, i) => {
     const canRepro = f.repro && f.repro.inputs && f.repro.inputs.length > 0;
@@ -536,6 +562,24 @@ async function attach(work, what) {
     `Attached <b>${esc(byo.label)}</b> — ${byo.canvas.width}×${byo.canvas.height} canvas. ` +
     `The fly is driving it with arrow keys and WASD. Findings appear on the right.`;
 }
+
+/** 세션 리포트 — 개발자가 받아서 읽고 그대로 재현하는 산출물 */
+$("#report").onclick = () => {
+  const findings = company.flatMap((e) => e.bugs);
+  const html = buildReport({
+    targets: [...played],
+    policy: POLICIES[policyId].label,
+    runs, staff: company.length,
+    spikes: company.reduce((a, x) => a + x.spikes, 0),
+    minutes: Math.max(1, Math.round((Date.now() - t0) / 60000)),
+    measured: MEASURED.map((m) => ({ label: POLICIES[m.id].label, pct: m.pct, kinds: m.kinds })),
+  }, findings);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+  a.download = `flyworker_report_${new Date().toISOString().slice(0, 10)}.html`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
 
 $("#toByo").onclick = goByo;
 addEventListener("resize", () => byo && byo.ready && byo.fit());

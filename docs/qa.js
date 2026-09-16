@@ -79,6 +79,15 @@ export class QA {
     return this.findings;
   }
 
+  /** 맵 밖으로 나간 방향 — 같은 변을 넘은 탈출은 한 사건으로 묶는다 */
+  side(st) {
+    if (st.x < 0) return "left";
+    if (st.x > this.cfg.W) return "right";
+    if (st.y < 0) return "top";
+    if (st.y > this.cfg.H) return "bottom";
+    return "escaped";
+  }
+
   /** 목표까지 거리 개선이 멈췄는지 (호출자가 거리를 준다) */
   progress(st, dist) {
     if (dist < this.bestDist - 2) { this.bestDist = dist; this.sinceBest = 0; }
@@ -87,12 +96,17 @@ export class QA {
   }
 
   report(code, st, detail) {
-    // 위치가 의미 있는 버그(끼임·맵이탈)는 위치까지 열쇠에 넣고,
-    // 전역 상태 버그(문 잠김·정지·진행불가)는 코드만으로 한 번만 보고한다.
-    const positional = code === "STUCK" || code === "OOB";
-    const key = positional
-      ? `${code}:${Math.round(st.x / 16)}:${Math.round(st.y / 16)}`
-      : code;
+    // 같은 사건을 두 번 세지 않는 것이 이 도구의 주장("버그 개수는 가짜 지표")의
+    // 최소 조건이다. 무엇이 "같은 사건"인지는 증상마다 다르다.
+    //
+    //  OOB   — 같은 변을 넘은 것은 한 사건이다. (321,20)과 (328,20)은 같은 탈출이고,
+    //          픽셀 버킷으로 나누면 한 번의 탈출이 두 건으로 불어난다.
+    //  STUCK — 끼인 자리가 다르면 다른 사건이다. 다만 32픽셀로 거칠게 묶는다.
+    //  나머지 — 전역 상태라 코드 하나로 한 번만 보고한다.
+    const key =
+      code === "OOB"   ? `OOB:${this.side(st)}` :
+      code === "STUCK" ? `STUCK:${st.x >> 5}:${st.y >> 5}` :
+      code;
     if (this.seen.has(key)) return;
     this.seen.add(key);
     const r = RULES[code];
