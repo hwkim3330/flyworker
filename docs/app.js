@@ -473,8 +473,8 @@ document.querySelectorAll(".pol").forEach((b) => b.onclick = () => setPolicy(b.d
 $("#compare").innerHTML = MEASURED.map((m) => `
   <tr class="${m.id === "fly" ? "hi" : ""}">
     <td>${esc(POLICIES[m.id].label)}</td>
-    <td class="mono">${m.pct}%</td>
-    <td class="mono">${m.kinds}</td>
+    <td class="mono">${m.pct}%<span style="color:var(--fg3)"> ${esc(m.range)}</span></td>
+    <td class="mono">${esc(m.kinds)}</td>
     <td class="mono" style="color:var(--fg3)">${esc(m.types)}</td>
   </tr>`).join("");
 
@@ -572,7 +572,7 @@ $("#report").onclick = () => {
     runs, staff: company.length,
     spikes: company.reduce((a, x) => a + x.spikes, 0),
     minutes: Math.max(1, Math.round((Date.now() - t0) / 60000)),
-    measured: MEASURED.map((m) => ({ label: POLICIES[m.id].label, pct: m.pct, kinds: m.kinds })),
+    measured: MEASURED.map((m) => ({ label: POLICIES[m.id].label, pct: m.pct, range: m.range, kinds: m.kinds })),
   }, findings);
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([html], { type: "text/html" }));

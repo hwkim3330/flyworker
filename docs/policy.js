@@ -42,15 +42,22 @@ export const POLICIES = {
   },
   straight: {
     label: "Straight ahead",
-    note: "A control. Finds the most bugs by count — all 95 of them the same one.",
+    note: "A control. Finds the most findings by count — all 95 of them the same freeze.",
     make: () => () => [0, 0.8],
   },
 };
 
-/** 측정값 — 24,000프레임 예산, 연구실 게임 */
+/**
+ * 측정값 — 24,000프레임 예산, 연구실 게임, 같은 감지기.
+ *
+ * 한 번만 돌린 숫자는 싣지 않는다. 난수 정책은 회차 편차가 커서(한 번은 55%,
+ * 다음은 78%) 단일 측정값을 표에 박으면 다시 돌렸을 때 다른 값이 나온다.
+ * 그래서 난수를 시드로 고정하고 회차를 나눠 평균과 범위를 낸다.
+ * `node policy_bench.mjs` 로 그대로 재현된다.
+ */
 export const MEASURED = [
-  { id: "fly",      runs: 60, cells: 77,  pct: 35, bugs: 59, kinds: 2, types: "STUCK, OOB" },
-  { id: "smooth",   runs: 36, cells: 122, pct: 55, bugs: 38, kinds: 5, types: "all five" },
-  { id: "uniform",  runs: 29, cells: 129, pct: 58, bugs: 34, kinds: 3, types: "STUCK, OOB, DOORLOCK" },
-  { id: "straight", runs: 96, cells: 11,  pct: 5,  bugs: 95, kinds: 1, types: "FREEZE only" },
+  { id: "fly",      reps: 3, pct: 34, range: "28–41", kinds: "2.7", types: "STUCK, OOB, DOORLOCK, FREEZE" },
+  { id: "smooth",   reps: 5, pct: 61, range: "57–66", kinds: "3.2", types: "all five" },
+  { id: "uniform",  reps: 5, pct: 50, range: "46–52", kinds: "3.6", types: "STUCK, OOB, DOORLOCK, FREEZE" },
+  { id: "straight", reps: 3, pct: 5,  range: "5–5",   kinds: "1.0", types: "FREEZE only" },
 ];

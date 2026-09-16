@@ -161,14 +161,18 @@ table.cmp tr.hi td{color:var(--accent)}
       <div class="hd"><h2>Policies, measured</h2><span class="tag">24,000 frames each, lab game</span></div>
       <div class="bd">
         <table class="cmp">
-          <tr><th>Policy</th><th>Coverage</th><th>Symptom types</th><th></th></tr>
+          <tr><th>Policy</th><th>Coverage · range</th><th>Symptom types</th><th></th></tr>
           <tbody id="compare"></tbody>
         </table>
         <div class="note" style="margin-top:12px">
-          <b>The fly loses.</b> Smoothed noise explores more and finds all five symptom types;
-          the fly finds two. We publish this because the product is the framework, not the policy.<br><br>
-          <b>Bug count is a fake metric.</b> "Straight ahead" finds 95 bugs — every one of them the
-          same freeze. Symptom <i>diversity</i> is what matters.
+          <b>The fly loses.</b> It reaches a third of the map where smoothed noise reaches
+          two thirds, and it hits fewer symptom types per run than either noise policy.
+          We publish this because the product is the framework, not the policy.<br><br>
+          <b>Bug count is a fake metric.</b> "Straight ahead" leads on count — 95 findings, every
+          one of them the same freeze. Coverage and symptom <i>diversity</i> are what matter.<br><br>
+          <b>These numbers reproduce.</b> A single run of a random policy swings between 55% and
+          78%, so a single measurement is worthless. The noise is seeded and averaged over repeats;
+          <span class="mono">node policy_bench.mjs</span> prints this table.
         </div>
       </div>
     </div>

@@ -105,10 +105,11 @@ ${list.length ? list.map(findingBlock).join("") : "<p>Nothing was found in this 
 
 ${s.measured && s.measured.length ? `
 <h2>How this policy compares</h2>
-<p class="cap">Measured on the built-in Lab game, 24,000 frames each, identical detector.</p>
+<p class="cap">Measured on the built-in Lab game, 24,000 frames each, identical detector.
+Random policies use a fixed seed and are averaged over repeats, so these numbers reproduce.</p>
 <table>
- <tr><th>Policy</th><th>Map coverage</th><th>Symptom types</th></tr>
- ${s.measured.map((m) => `<tr><td>${esc(m.label)}</td><td>${m.pct}%</td><td>${m.kinds}</td></tr>`).join("")}
+ <tr><th>Policy</th><th>Map coverage (mean)</th><th>Range</th><th>Symptom types (mean)</th></tr>
+ ${s.measured.map((m) => `<tr><td>${esc(m.label)}</td><td>${m.pct}%</td><td>${esc(m.range || "—")}</td><td>${esc(m.kinds)}</td></tr>`).join("")}
 </table>
 <p class="cap">The fly connectome is not the best policy here and we do not claim otherwise.
 The framework is what is being offered; the policy is a part you swap.</p>` : ""}
