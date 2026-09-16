@@ -436,7 +436,13 @@ async function preloadGta() {
   } catch (e) {
     console.warn("Could not load GTA1:", e);
     setPlaceButtons("lab");
-    $("#placeNote").innerHTML = "GTA1 failed to load — starting in the Lab instead.";
+    notePlace("lab");
+    // GTA1 자산은 우리가 배포하지 않고 원저자 페이지에서 직접 받아온다(저작권).
+    // 그쪽이 안 열리면 우리 버그가 아니라는 것을 말해줘야 한다.
+    $("#placeNote").innerHTML =
+      `<b>GTA1 is unavailable right now.</b> We do not redistribute its assets — they are loaded
+       straight from the original author's site, and that site is not answering. Press
+       <b>GTA1</b> to retry. Starting in the Lab instead:<br><br>` + $("#placeNote").innerHTML;
     gtaAuto = false;
   } finally { gtaLoading = false; }
   maybeStartGta();
@@ -500,7 +506,10 @@ $("#toGta").onclick = async () => {
     try {
       gta = await new Gta($("#gta")).load();
     } catch (err) {
-      $("#placeNote").textContent = "Could not load GTA1: " + (err.message || err);
+      $("#placeNote").innerHTML =
+        `<b>GTA1 is still unavailable.</b> Its assets come from the original author's site
+         (we do not redistribute them) and that request failed:
+         <span class="mono">${esc(err.message || err)}</span>. The Lab, DOOM and Yours all work.`;
       gtaLoading = false; $("#toGta").textContent = "GTA1"; return;
     }
     gtaLoading = false; $("#toGta").textContent = "GTA1";
