@@ -62,8 +62,10 @@ export class QA {
         if (y < miny) miny = y; if (y > maxy) maxy = y;
       }
       if (maxx - minx <= 6 && maxy - miny <= 6 && this.sameState < 90)
+        // 범위가 아니라 픽셀 수로 적는다. max-min 을 그대로 쓰면 한 자리에
+        // 완전히 멈춘 경우가 "6×0 픽셀 상자"로 나와 우리 쪽 버그처럼 보인다.
         this.report("STUCK", st,
-          `Confined to a ${maxx - minx}×${maxy - miny} pixel box for 300 frames.`);
+          `Confined to a ${maxx - minx + 1}×${maxy - miny + 1} pixel box for 300 frames.`);
     }
 
     // 3) 맵 이탈
