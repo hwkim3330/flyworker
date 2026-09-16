@@ -47,7 +47,8 @@ header .sub{font-size:13.5px;color:var(--fg3)}
 @media(max-width:1080px){.hero{grid-template-columns:1fr}}
 
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-.panel .hd{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.panel .hd{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.panel .hd h2{flex:none;white-space:nowrap}
 .panel .hd h2{font-size:14.5px}
 .panel .hd .tag{font-size:12.5px;color:var(--fg3)}
 .panel .bd{padding:18px}
@@ -160,3 +161,27 @@ footer{color:var(--fg3);font-size:12.5px;text-align:center;padding:30px;border-t
 .byorow input{flex:1;min-width:0;background:#0e0e10;border:1px solid var(--line);border-radius:9px;
   padding:8px 11px;color:var(--fg);font:13px ui-monospace,Menlo,monospace;outline:none}
 .byorow input:focus{border-color:#3a3a42}
+
+/* ── 좁은 화면 ───────────────────────────────
+   심사도 링크로 받는다. 폰에서 먼저 열릴 수 있다.
+   기본 레이아웃은 상단 머리말이 세 줄로 늘어나 화면의 4분의 1을 고정으로
+   먹고, 근무지 버튼 줄이 패널 밖으로 잘렸다. 둘 다 여기서 잡는다. */
+@media(max-width:700px){
+  header{padding:12px 16px;gap:10px}
+  header h1{font-size:17px}
+  header .sub{font-size:12.5px;line-height:1.35}
+  header .meta{display:none}          /* 같은 숫자가 본문에 다시 나온다 */
+  .page{padding:16px 16px 60px}
+  .panel .hd{padding:12px 14px;gap:8px}
+  .panel .bd{padding:14px}
+  .seg{border-radius:10px}
+  .seg button{padding:6px 10px;font-size:12.5px}
+  button.plain{padding:7px 11px;font-size:12.5px}
+  .legend{gap:8px 10px;font-size:10.5px;left:10px;bottom:9px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .g{grid-template-columns:78px 1fr 50px;gap:9px}
+  .g .k{font-size:11.5px}
+  .stage .hud{left:9px;top:9px;gap:5px}
+  .chip{padding:3px 8px;font-size:11px}
+  #bugs{max-height:none}              /* 폰에서는 칸 안에 칸을 만들지 않는다 */
+}

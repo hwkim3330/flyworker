@@ -115,6 +115,10 @@ export class Gta {
     // 메뉴를 통과시킨다. GTA1 은 로고·메뉴를 거쳐야 게임에 들어간다.
     if (this.boot < 600) {
       this.boot++;
+      // 디버그 창(Game Cheats)은 기본값이 '켜짐'이라 화면 좌상단을 가린다.
+      // C 가 토글이므로 딱 한 번만 누른다. 40프레임이면 모듈이 이미 떠 있어
+      // 입력이 먹고, 부팅 끝(600)까지 기다리면 10초 동안 가린 채로 보인다.
+      if (this.boot === 40) { this.hold("c", true); setTimeout(() => this.hold("c", false), 60); return; }
       const t = this.boot % 40;
       if (t === 0) this.hold("enter", true);
       else if (t === 6) this.hold("enter", false);
@@ -122,14 +126,6 @@ export class Gta {
       else if (t === 26) this.hold("space", false);
       return;
     }
-    // 부팅이 끝나면 디버그 창을 한 번 끈다 (기본값이 켜짐이라 화면을 가린다)
-    if (this.boot === 600) {
-      this.boot++;
-      this.hold("c", true);
-      setTimeout(() => this.hold("c", false), 60);
-      return;
-    }
-
     if (this.byHuman) { this.releaseAll(); return; }
 
     this.hold("left", steer < -0.18);
