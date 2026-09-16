@@ -538,6 +538,7 @@ async function attach(work, what) {
 }
 
 $("#toByo").onclick = goByo;
+addEventListener("resize", () => byo && byo.ready && byo.fit());
 $("#byoSample").onclick = () => attach(
   (b) => fetch(new URL("./samples/rover.html", import.meta.url).href)
     .then((r) => r.text()).then((t) => b.loadHtml(t, "rover.html")),

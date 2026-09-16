@@ -119,6 +119,7 @@ export class Byo {
         if (best && best.width > 16 && best.height > 16) {
           this.canvas = best;
           this.ready = true;
+          this.fit();
           return resolve(this);
         }
         if (performance.now() - t0 > 20000)
@@ -129,6 +130,25 @@ export class Byo {
       this.frame.addEventListener("load", look, { once: true });
       setTimeout(look, 400);                 // load 가 이미 지났을 수도 있다
     });
+  }
+
+  /**
+   * 표적을 무대 크기에 맞춘다.
+   * iframe 을 무대 전체로 늘리면 게임은 왼쪽 위 구석에 원래 크기로 남는다.
+   * 그래서 프레임을 캔버스 크기로 줄이고 통째로 확대한다. 게임 안의 좌표계는
+   * 건드리지 않는다 — 우리가 크기를 바꾸면 게임이 스스로 다시 배치할 수 있고,
+   * 그건 우리가 보려던 버그가 아니다.
+   */
+  fit() {
+    if (!this.canvas) return;
+    const f = this.frame, stage = f.parentElement;
+    const w = this.canvas.offsetWidth || this.canvas.width;
+    const h = this.canvas.offsetHeight || this.canvas.height;
+    if (!w || !h || !stage.clientWidth) return;
+    const k = Math.min(stage.clientWidth / w, stage.clientHeight / h);
+    f.style.cssText =
+      `position:absolute;inset:auto;left:50%;top:50%;width:${w}px;height:${h}px;` +
+      `transform:translate(-50%,-50%) scale(${k});transform-origin:center;border:0;background:#000`;
   }
 
   /** 합성 키 — iframe 의 window/document/캔버스 모두에 쏜다 (어디서 듣는지 모르므로) */
@@ -216,6 +236,7 @@ export class Byo {
     this.ready = false; this.canvas = null; this.tainted = false; this.frameNo = 0;
     this.restarts = 0;
     this.frame.src = "about:blank";
+    this.frame.style.cssText = "";
     if (this.blobUrl) { URL.revokeObjectURL(this.blobUrl); this.blobUrl = null; }
   }
 }
