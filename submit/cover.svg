@@ -22,8 +22,8 @@
     <line x1="132" y1="522" x2="968" y2="522" stroke="#ffffff" stroke-opacity="0.09"/>
 
     <text x="132" y="562" fill="#30d158" font-weight="600">Fly connectome</text>
-    <text x="520" y="562" fill="#30d158" font-family="Menlo,monospace">34%</text>
-    <text x="620" y="562" font-size="16" fill="#6e6e73" font-family="Menlo,monospace">28–41</text>
+    <text x="520" y="562" fill="#30d158" font-family="Menlo,monospace">42%</text>
+    <text x="620" y="562" font-size="16" fill="#6e6e73" font-family="Menlo,monospace">35–50</text>
     <text x="760" y="562" fill="#30d158" font-family="Menlo,monospace">2.7</text>
     <text x="840" y="562" font-size="17" fill="#6e6e73">loses on both</text>
 

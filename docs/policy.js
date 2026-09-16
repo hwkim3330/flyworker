@@ -73,7 +73,7 @@ export const POLICIES = {
  * `node policy_bench.mjs` 로 그대로 재현된다.
  */
 export const MEASURED = [
-  { id: "fly",      reps: 3, pct: 34, range: "28–41", kinds: "2.7", types: "STUCK, OOB, DOORLOCK, FREEZE" },
+  { id: "fly",      reps: 3, pct: 42, range: "35–50", kinds: "2.7", types: "STUCK, OOB, NOPROG, DOORLOCK" },
   { id: "smooth",   reps: 5, pct: 61, range: "57–66", kinds: "3.2", types: "all five" },
   { id: "uniform",  reps: 5, pct: 50, range: "46–52", kinds: "3.6", types: "STUCK, OOB, DOORLOCK, FREEZE" },
   { id: "straight", reps: 3, pct: 5,  range: "5–5",   kinds: "1.0", types: "FREEZE only" },
