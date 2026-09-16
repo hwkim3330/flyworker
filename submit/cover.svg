@@ -2,49 +2,64 @@
   <rect width="1920" height="1080" fill="#000"/>
 
   <text x="100" y="112" font-family="Helvetica,Arial" font-size="54" font-weight="600" fill="#f5f5f7" letter-spacing="-1">Fly Worker</text>
-  <text x="440" y="112" font-family="Helvetica,Arial" font-size="27" fill="#86868b">A connectome that does not correct its steering</text>
+  <text x="440" y="112" font-family="Helvetica,Arial" font-size="27" fill="#86868b">A QA fuzzer for browser games</text>
   <line x1="100" y1="146" x2="1820" y2="146" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1"/>
 
   <!-- 핵심 문장 -->
-  <text x="100" y="236" font-family="Helvetica,Arial" font-size="44" font-weight="600" fill="#f5f5f7" letter-spacing="-0.8">A real fruit-fly brain plays games.</text>
-  <text x="100" y="296" font-family="Helvetica,Arial" font-size="44" font-weight="600" fill="#30d158" letter-spacing="-0.8">Badly. And we say so.</text>
+  <text x="100" y="236" font-family="Helvetica,Arial" font-size="44" font-weight="600" fill="#f5f5f7" letter-spacing="-0.8">It plays your game, finds bugs, and reproduces them exactly.</text>
+  <text x="100" y="296" font-family="Helvetica,Arial" font-size="44" font-weight="600" fill="#30d158" letter-spacing="-0.8">One of its policies is a real fly brain. That one loses.</text>
 
-  <text x="100" y="360" font-family="Helvetica,Arial" font-size="23" fill="#a1a1a6">138,639 neurons · 2.7M connections · zero LLM inference · runs in your browser</text>
+  <text x="100" y="360" font-family="Helvetica,Arial" font-size="23" fill="#a1a1a6">138,639 neurons · 2.7M connections · zero LLM inference · runs entirely in your browser</text>
 
-  <!-- 왼쪽: 다른 구현들 -->
-  <rect x="100" y="410" width="820" height="330" rx="18" fill="#141416" stroke="#ffffff" stroke-opacity="0.09"/>
-  <text x="132" y="460" font-family="Helvetica,Arial" font-size="24" font-weight="600" fill="#f5f5f7">Who actually steers, in each implementation</text>
+  <!-- 왼쪽: 정책 비교 (측정) -->
+  <rect x="100" y="410" width="900" height="330" rx="18" fill="#141416" stroke="#ffffff" stroke-opacity="0.09"/>
+  <text x="132" y="458" font-family="Helvetica,Arial" font-size="24" font-weight="600" fill="#f5f5f7">Policies, measured</text>
+  <text x="392" y="458" font-family="Helvetica,Arial" font-size="18" fill="#6e6e73">24,000 frames each, same game, same detector</text>
   <g font-family="Helvetica,Arial" font-size="19">
-    <text x="132" y="512" fill="#a1a1a6">webgpu-fly</text>
-    <text x="360" y="512" fill="#6e6e73">hand-written sin(t×10Hz) gait</text>
-    <text x="132" y="556" fill="#a1a1a6">Xenova</text>
-    <text x="360" y="556" fill="#6e6e73">"engineered rate decoder"</text>
-    <text x="132" y="600" fill="#a1a1a6">flybrain</text>
-    <text x="360" y="600" fill="#6e6e73">brain clamped to ±0.05, atan2</text>
-    <text x="132" y="644" fill="#a1a1a6">doomfly</text>
-    <text x="360" y="644" fill="#6e6e73">+ dopamine plasticity — failed validation</text>
-    <text x="132" y="700" fill="#30d158" font-weight="600">This project</text>
-    <text x="360" y="700" fill="#30d158" font-weight="600">descending-neuron output. Nothing else.</text>
+    <text x="132" y="506" fill="#6e6e73">Policy</text>
+    <text x="520" y="506" fill="#6e6e73">Coverage</text>
+    <text x="700" y="506" fill="#6e6e73">Symptom types</text>
+    <line x1="132" y1="522" x2="968" y2="522" stroke="#ffffff" stroke-opacity="0.09"/>
+
+    <text x="132" y="562" fill="#30d158" font-weight="600">Fly connectome</text>
+    <text x="520" y="562" fill="#30d158" font-family="Menlo,monospace">35%</text>
+    <text x="700" y="562" fill="#30d158" font-family="Menlo,monospace">2</text>
+    <text x="800" y="562" fill="#6e6e73">STUCK, OOB</text>
+
+    <text x="132" y="606" fill="#a1a1a6">Smoothed noise</text>
+    <text x="520" y="606" fill="#f5f5f7" font-family="Menlo,monospace">55%</text>
+    <text x="700" y="606" fill="#f5f5f7" font-family="Menlo,monospace">5</text>
+    <text x="800" y="606" fill="#6e6e73">all five</text>
+
+    <text x="132" y="650" fill="#a1a1a6">Uniform noise</text>
+    <text x="520" y="650" fill="#f5f5f7" font-family="Menlo,monospace">58%</text>
+    <text x="700" y="650" fill="#f5f5f7" font-family="Menlo,monospace">3</text>
+
+    <text x="132" y="694" fill="#a1a1a6">Straight ahead</text>
+    <text x="520" y="694" fill="#f5f5f7" font-family="Menlo,monospace">5%</text>
+    <text x="700" y="694" fill="#f5f5f7" font-family="Menlo,monospace">1</text>
+    <text x="800" y="694" font-size="18" fill="#6e6e73">95 findings, one freeze</text>
   </g>
 
-  <!-- 오른쪽: 손상 실험 -->
-  <rect x="960" y="410" width="860" height="330" rx="18" fill="#141416" stroke="#ffffff" stroke-opacity="0.09"/>
-  <text x="992" y="460" font-family="Helvetica,Arial" font-size="24" font-weight="600" fill="#f5f5f7">Proof: cut 40 of 138,639 neurons</text>
-  <text x="992" y="494" font-family="Helvetica,Arial" font-size="18" fill="#6e6e73">0.03% — implementations that script their steering survive this</text>
-  <g font-family="Helvetica,Arial" font-size="21">
-    <text x="992" y="556" fill="#a1a1a6">intact</text>
-    <rect x="1180" y="538" width="321" height="22" rx="11" fill="#30d158" fill-opacity="0.9"/>
-    <text x="1600" y="556" fill="#f5f5f7" font-family="Menlo,monospace">0.947</text>
+  <!-- 오른쪽: 파이프라인 -->
+  <rect x="1040" y="410" width="780" height="330" rx="18" fill="#141416" stroke="#ffffff" stroke-opacity="0.09"/>
+  <text x="1072" y="458" font-family="Helvetica,Arial" font-size="24" font-weight="600" fill="#f5f5f7">The framework is the product</text>
+  <text x="1072" y="492" font-family="Helvetica,Arial" font-size="18" fill="#6e6e73">the policy is swappable; everything else is the value</text>
+  <g font-family="Helvetica,Arial" font-size="20">
+    <text x="1072" y="552" fill="#0a84ff" font-family="Menlo,monospace">1</text>
+    <text x="1112" y="552" fill="#f5f5f7">Attach</text>
+    <text x="1260" y="552" fill="#86868b">synthetic keys + framebuffer — no</text>
+    <text x="1260" y="580" fill="#86868b">source access, no game-side interface</text>
 
-    <text x="992" y="612" fill="#a1a1a6">40 neurons cut</text>
-    <rect x="1180" y="594" width="4" height="22" rx="2" fill="#ff453a"/>
-    <text x="1600" y="612" fill="#ff453a" font-family="Menlo,monospace">0.000</text>
+    <text x="1072" y="632" fill="#0a84ff" font-family="Menlo,monospace">2</text>
+    <text x="1112" y="632" fill="#f5f5f7">Detect</text>
+    <text x="1260" y="632" fill="#86868b">five symptom rules, deterministic —</text>
+    <text x="1260" y="660" fill="#86868b">no model decides what counts as a bug</text>
 
-    <text x="992" y="668" fill="#a1a1a6">healed</text>
-    <rect x="1180" y="650" width="380" height="22" rx="11" fill="#30d158" fill-opacity="0.9"/>
-    <text x="1600" y="668" fill="#f5f5f7" font-family="Menlo,monospace">1.121</text>
+    <text x="1072" y="712" fill="#0a84ff" font-family="Menlo,monospace">3</text>
+    <text x="1112" y="712" fill="#f5f5f7">Reproduce</text>
+    <text x="1260" y="712" fill="#30d158">seed + input sequence — 12/12 exact</text>
   </g>
-  <text x="992" y="716" font-family="Helvetica,Arial" font-size="18" fill="#6e6e73">left / right direction separation, Hz</text>
 
   <!-- 하단 3칸 -->
   <g font-family="Helvetica,Arial">
@@ -54,12 +69,12 @@
     <text x="132" y="892" font-size="18" fill="#86868b">bugs deliberately planted in it</text>
 
     <rect x="686" y="782" width="548" height="150" rx="18" fill="#141416" stroke="#ffffff" stroke-opacity="0.09"/>
-    <text x="718" y="828" font-size="23" font-weight="600" fill="#f5f5f7">Findings reproduce exactly</text>
-    <text x="718" y="864" font-size="18" fill="#86868b">seed + input sequence — the hardest</text>
-    <text x="718" y="892" font-size="18" fill="#86868b">thing in QA stops existing. 12/12</text>
+    <text x="718" y="828" font-size="23" font-weight="600" fill="#f5f5f7">Bug count is a fake metric</text>
+    <text x="718" y="864" font-size="18" fill="#86868b">so we report coverage and symptom</text>
+    <text x="718" y="892" font-size="18" fill="#86868b">diversity, and we lose on both</text>
 
     <rect x="1272" y="782" width="548" height="150" rx="18" fill="#141416" stroke="#ffffff" stroke-opacity="0.09"/>
-    <text x="1304" y="828" font-size="23" font-weight="600" fill="#f5f5f7">Limits are measured</text>
+    <text x="1304" y="828" font-size="23" font-weight="600" fill="#f5f5f7">Why the fly loses</text>
     <text x="1304" y="864" font-size="18" fill="#86868b">ON pathway dead, T4 never fires —</text>
     <text x="1304" y="892" font-size="18" fill="#86868b">wiring without dynamics. All published.</text>
   </g>
