@@ -60,6 +60,20 @@ const make = {
   straight: () => () => [0, 0.8],
 
   /**
+   * 섞은 정책의 대조군 — 초파리 항만 빼고 난수 항은 그대로 둔다.
+   *
+   * hybrid 를 smooth 와 비교하면 난수 진폭이 달라(1.2 vs 3.0) 공정하지 않다.
+   * 같은 시드를 주면 이 정책은 hybrid 가 쓰는 난수열과 완전히 같은 열을 본다.
+   * 그래서 hybrid − weak 가 곧 "커넥톰이 보탠 몫"이다.
+   */
+  weak: (seed) => { const r = mulberry32(seed); let n = 0, t = 0.7;
+    return () => {
+      n += (r() * 2 - 1 - n) * 0.08;
+      t += ((0.35 + r() * 0.65) - t) * 0.05;
+      return [Math.max(-1, Math.min(1, n * 3 * 0.4)), t];
+    }; },
+
+  /**
    * 섞은 정책 — 초파리 조향에 평활 난수를 더한다.
    * 초파리가 단독으로 지는 것은 쟀다. 그러면 남는 질문은
    * "커넥톰이 아무것도 보태지 않는가"다. 프레임워크가 정책을 갈아끼울 수
@@ -114,9 +128,9 @@ const rng = (a) => `${Math.min(...a).toFixed(0)}–${Math.max(...a).toFixed(0)}`
 console.log(`같은 프레임워크 · 같은 계산량(${BUDGET.toLocaleString()}프레임) · 정책만 교체`);
 console.log(`난수는 시드 고정. 회차마다 시드와 판 순서가 다르다.\n`);
 console.log("정책        회차  탐색률(평균)   범위      증상종류(평균)  전체 관측 종류");
-const REPS = { fly: 3, uniform: 5, smooth: 5, straight: 3, hybrid: 3 };
+const REPS = { fly: 3, uniform: 5, smooth: 5, straight: 3, hybrid: 3, weak: 3 };
 const out = {};
-for (const id of ['fly', 'hybrid', 'smooth', 'uniform', 'straight']) {
+for (const id of ['fly', 'hybrid', 'weak', 'smooth', 'uniform', 'straight']) {
   const rs = [];
   for (let r = 0; r < REPS[id]; r++) rs.push(shift(id, r));
   const pcts = rs.map((x) => x.pct), kinds = rs.map((x) => Object.keys(x.codes).length);
@@ -135,4 +149,9 @@ if (process.argv.includes('--restart')) {
       `버그 ${mean(rs.map(x=>x.bugs)).toFixed(0)}건  판수 ${mean(rs.map(x=>x.runs)).toFixed(0)}`);
   }
 }
+console.log(`
+=== 커넥톰이 보탠 몫 (같은 난수열, 초파리 항만 차이) ===
+  섞은 정책 (초파리 + 난수)  탐색률 ${out.hybrid.pct}%  범위 ${out.hybrid.pctRange}  증상 ${out.hybrid.kinds}종
+  대조군   (난수만, 같은 열)  탐색률 ${out.weak.pct}%  범위 ${out.weak.pctRange}  증상 ${out.weak.kinds}종
+  차이     ${out.hybrid.pct - out.weak.pct > 0 ? '+' : ''}${out.hybrid.pct - out.weak.pct}%p`);
 console.log("\nJSON " + JSON.stringify(out));

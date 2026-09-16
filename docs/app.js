@@ -131,7 +131,9 @@ function tick() {
     if (!e.ready) continue;
 
     // 정책이 초파리가 아니면 여기서 입력을 만든다. 뇌는 계속 돌며 화면에 보인다.
-    if (policyFn) { const [sv, tv] = policyFn(); e.steer = sv; e.thrust = tv; }
+    // 정책이 초파리가 아니면 여기서 입력을 만든다. 커넥톰 출력을 넘겨주므로
+    // 섞은 정책은 그 위에 얹을 수 있고, 나머지 정책은 그냥 무시한다.
+    if (policyFn) { const [sv, tv] = policyFn(e.steer, e.thrust); e.steer = sv; e.thrust = tv; }
 
     // ── 사용자가 붙인 게임 ──
     if (e === byoEmp && byo && byo.ready) {

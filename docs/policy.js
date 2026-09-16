@@ -5,16 +5,13 @@
  * 입력열을 저장해 재현한다. 무엇이 입력을 만드는지는 갈아 끼울 수 있다.
  *
  * 그래서 초파리 커넥톰이 난수보다 나은지 같은 조건에서 잴 수 있다.
- * 실측 결과 — 24,000프레임 예산, 연구실 게임:
- *
- *   정책          탐색률   찾은 증상 종류
- *   초파리 커넥톰    35%    2종
- *   균등 난수       58%    3종
- *   평활 난수       55%    5종 (전부)
- *   직진만          5%    1종
+ * 실측값은 아래 MEASURED 에 있고 `node policy_bench.mjs` 로 재현된다.
  *
  * 초파리가 진다. 그 결과를 그대로 싣는다.
  * 그리고 "버그 수"는 가짜 지표다 — 직진만 하면 같은 버그를 95번 찾는다.
+ *
+ * 정책 함수는 (flySteer, flyThrust) 를 받는다. 대부분 무시하지만,
+ * 섞은 정책은 커넥톰 출력 위에 난수를 얹어야 하므로 필요하다.
  */
 
 export const POLICIES = {
@@ -32,6 +29,26 @@ export const POLICIES = {
         s += (Math.random() * 2 - 1 - s) * 0.08;
         t += ((0.35 + Math.random() * 0.65) - t) * 0.05;
         return [Math.max(-1, Math.min(1, s * 3)), t];
+      };
+    },
+  },
+  /**
+   * 섞은 정책 — 커넥톰 조향에 평활 난수를 얹는다.
+   *
+   * 초파리가 단독으로 지는 것은 쟀다. 그러면 남는 질문은 하나다 —
+   * 커넥톰이 난수 위에 무언가를 보태는가? 프레임워크가 정책을 갈아끼울 수
+   * 있으니 이건 의견이 아니라 측정으로 답할 수 있다.
+   * 벤치에는 같은 난수열을 쓰는 대조군(초파리 항만 뺀 것)이 있다.
+   */
+  hybrid: {
+    label: "Fly + noise",
+    note: "The connectome's steering with smoothed noise on top. Measured against the same noise alone.",
+    make: () => {
+      let n = 0, t = 0.7;
+      return (flySteer = 0) => {
+        n += (Math.random() * 2 - 1 - n) * 0.08;
+        t += ((0.35 + Math.random() * 0.65) - t) * 0.05;
+        return [Math.max(-1, Math.min(1, flySteer * 0.6 + n * 3 * 0.4)), t];
       };
     },
   },
