@@ -31,6 +31,13 @@ export class Brain {
    * 죽고, ON 입력을 받는 T4 도 영영 울지 않는다. 실측으로 확인했다.
    */
   constructor(c, dt = 1.0, wsyn = W_SYN, tonic = 0) {
+    /**
+     * 난수원. 감각 뉴런의 강제 발화는 포아송 과정이라 난수를 쓴다.
+     * 즉 이 뇌는 결정적이지 않다. 측정값을 "재현된다"고 말하려면
+     * 난수까지 고정할 수 있어야 하므로 갈아끼울 수 있게 둔다.
+     * 화면에서는 Math.random 그대로 쓰고, 벤치에서만 시드 고정 PRNG 를 꽂는다.
+     */
+    this.rng = Math.random;
     this.wsyn = wsyn;
     this.tonic = tonic;
     this.c = c;
@@ -76,6 +83,7 @@ export class Brain {
     const N = this.c.N, dt = this.dt;
     const dm = this.decayM, ds = this.decayS, dr = this.decayR;
     const sp = this.spikes, ws = this.wsyn, cut = this.cut, tn = this.tonic;
+    const rnd = this.rng;
     let n = 0;
 
     const drv = this.drive;
@@ -85,7 +93,7 @@ export class Brain {
       if (refr[i] > 0) { refr[i] = refr[i] > dt ? refr[i] - dt : 0; V[i] = V_RESET; continue; }
       // 감각 뉴런 강제 발화
       if (cut && cut[i]) { V[i] = V_REST; continue; }   // 잘린 뉴런은 울지 않는다
-      if (drv[i] > 0 && Math.random() < drv[i]) {
+      if (drv[i] > 0 && rnd() < drv[i]) {
         V[i] = V_RESET; refr[i] = REFRAC; sp[n++] = i; continue;
       }
       const drive = I[i] + ext[i] + tn;

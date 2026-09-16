@@ -23,9 +23,6 @@ for (const s of ['left', 'right']) {
     cell[i] = Math.min(GH - 1, Math.floor(e.v[i] * GH)) * GW + Math.min(GW - 1, Math.floor((e.u[i] * 0.5 + h * 0.5) * GW));
   em[s] = { ci, cell, buf: new Float32Array(ci.length) };
 }
-const b = new Brain(c, 1.0);
-const cal = await calibrate(b, M.eye, M.descendingAll, { steps: 1000 });
-
 /** 시드 고정 난수 — 같은 시드면 같은 결과가 나온다 */
 const mulberry32 = (a) => () => {
   a |= 0; a = a + 0x6D2B79F5 | 0;
@@ -33,6 +30,17 @@ const mulberry32 = (a) => () => {
   t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
   return ((t ^ t >>> 14) >>> 0) / 4294967296;
 };
+
+const b = new Brain(c, 1.0);
+
+/**
+ * 뇌의 난수까지 고정한다.
+ * 감각 뉴런 강제 발화가 포아송이라 초파리 정책도 결정적이지 않다.
+ * 이걸 고정하지 않으면 "이 표는 재현된다"는 말이 난수 정책에만 해당한다.
+ */
+const seedBrain = (seed) => { b.rng = mulberry32(seed); };
+seedBrain(20260916);
+const cal = await calibrate(b, M.eye, M.descendingAll, { steps: 1000 });
 
 const make = {
   fly: () => { b.reset(); delete cal._ema; delete cal._sm;
@@ -73,6 +81,7 @@ const make = {
 };
 
 function shift(id, rep, restart = true) {
+  seedBrain(104729 * (rep + 1));
   const fn = make[id](7919 * (rep + 1));
   const seen = new Set(); const codes = {};
   let bugs = 0, runs = 0, used = 0, sn = rep * 13;
