@@ -9,6 +9,7 @@ import { Game, BUGS } from "./game.js";
 import { Doom } from "./doom.js";
 import { Brain3D } from "./brain3d.js";
 import { Gta } from "./gta.js";
+import { Byo } from "./byo.js";
 import { normalizeField } from "./vision.js";
 import { POLICIES, MEASURED } from "./policy.js";
 import { QA, replay } from "./qa.js";
@@ -28,6 +29,11 @@ let doom = null, doomEmp = null, doomLoading = false;
 let gta = null, gtaEmp = null, gtaLoading = false;
 const gtaQA = { last: 0, same: 0, recent: [], reported: new Set() };
 const doomQA = { last: 0, same: 0, recent: [], reported: new Set() };
+
+// 사용자가 붙인 게임. 우리가 아무것도 모르는 표적이다.
+let byo = null, byoEmp = null;
+const byoQA = { last: 0, same: 0, recent: [], reported: new Set() };
+let byoRestarting = false;
 
 // 3D 뇌
 let b3d = null, lastFrameAt = performance.now();
@@ -110,6 +116,24 @@ function tick() {
     // 정책이 초파리가 아니면 여기서 입력을 만든다. 뇌는 계속 돌며 화면에 보인다.
     if (policyFn) { const [sv, tv] = policyFn(); e.steer = sv; e.thrust = tv; }
 
+    // ── 사용자가 붙인 게임 ──
+    if (e === byoEmp && byo && byo.ready) {
+      byo.drive(e.steer, e.thrust);
+      byo.vision(GW, GH, e.vision, normalizeField);
+      e.worker.postMessage({ t: "vision", frame: e.vision });
+      checkScreenQA(e, byo.screenHash(), byoQA, byo.label, byo.frameNo);
+      // 화면이 죽은 표적을 계속 두드려도 새 증상은 안 나온다. 새 판을 연다.
+      if (byoQA.same > 180 && !byoRestarting) {
+        byoRestarting = true;
+        byoQA.same = 0; byoQA.recent.length = 0; byoQA.last = 0;
+        byo.restart()
+          .then(() => { e.runs++; runs++; })
+          .catch((err) => console.warn("Could not restart the target:", err))
+          .finally(() => { byoRestarting = false; });
+      }
+      continue;
+    }
+
     // ── GTA1 근무 ──
     if (e === gtaEmp && gta && gta.ready) {
       gta.drive(e.steer, e.thrust);
@@ -180,7 +204,8 @@ function checkScreenQA(e, h, st, placeName, frame) {
   };
   if (st.same === 150)
     add("FREEZE", "Frozen screen", "high", `${placeName} rendered 150 identical frames — not a single pixel changed.`);
-  if (st.recent.length === 240 && new Set(st.recent).size <= 3)
+  // 멈춘 화면은 자동으로 '반복'으로도 보인다. 같은 사건을 두 번 세지 않는다.
+  if (st.recent.length === 240 && new Set(st.recent).size <= 3 && !st.reported.has("FREEZE"))
     add("LOOP", "Screen loop", "medium",
         `The last 240 frames cycled through only ${new Set(st.recent).size} distinct screens — likely stuck in a menu or a dead end.`);
 }
@@ -190,14 +215,22 @@ function draw() {
   if (!e) return;
   const onDoom = e === doomEmp && doom && doom.ready;
   const onGta = e === gtaEmp && gta && gta.ready;
-  $("#game").classList.toggle("showing", !onDoom && !onGta);
+  const onByo = e === byoEmp && byo && byo.ready;
+  $("#game").classList.toggle("showing", !onDoom && !onGta && !onByo);
   $("#doom").classList.toggle("showing", onDoom);
   $("#gta").classList.toggle("showing", onGta);
+  $("#byo").classList.toggle("showing", onByo);
   $("#who").textContent = `${e.name} · ${e.id}`;
   // 초파리가 보는 것은 근무지와 무관하게 늘 보여준다
   drawEye(eyeLc, e.vision, 0);
   drawEye(eyeRc, e.vision, 1);
 
+  if (onByo) {
+    $("#bPos").textContent = byo.label;
+    $("#bFrame").textContent = `${byo.frameNo}f`;
+    $("#bState").textContent = byo.tainted ? "Canvas unreadable" : "Playing";
+    drawMeters(e); return;                              // 남의 게임은 자기 iframe 에 그린다
+  }
   if (onGta) {
     $("#bPos").textContent = "GTA1";
     $("#bFrame").textContent = `${gta.frame}f`;
@@ -347,6 +380,7 @@ function setDriver(human) {
   humanMode = human;
   if (doom) doom.byHuman = human;
   if (gta) { gta.byHuman = human; if (human) gta.skipBoot(); }
+  if (byo) byo.byHuman = human;
   $("#byFly").classList.toggle("on", !human);
   $("#byHuman").classList.toggle("on", human);
   $("#humanNote").innerHTML = human
@@ -356,8 +390,10 @@ function setDriver(human) {
 }
 
 function setPlaceButtons(which) {
-  for (const [id, k] of [["#toLab", "lab"], ["#toDoom", "doom"], ["#toGta", "gta"]])
+  for (const [id, k] of [["#toLab", "lab"], ["#toDoom", "doom"], ["#toGta", "gta"], ["#toByo", "byo"]])
     $(id).classList.toggle("on", k === which);
+  // 붙이기 UI 는 그 자리에 있을 때만 보인다
+  $("#byoBox").style.display = which === "byo" ? "block" : "none";
 }
 
 /**
@@ -397,6 +433,10 @@ function notePlace(k) {
          "No bugs are planted here, so we only watch for freezes and loops.",
     doom: "<b>DOOM</b> — 10 imports, 4 exports. We read the framebuffer straight out of linear memory " +
           "and inject keys directly. The shareware WAD ships inside the module. No planted bugs here either.",
+    byo: "<b>Your game</b> — the claim of this project is that the <b>framework</b> is the product " +
+         "and the policy is a part. That is only true if it attaches to a game we have never seen. " +
+         "Drop one below. We load it into a same-origin frame, inject keys, read the canvas back, " +
+         "and run the same freeze and loop detectors.",
     lab: "<b>Lab</b> — a test game with four bugs deliberately planted in it. The detector does not know " +
          "where they are; it only watches symptoms. This is where finding and <b>reproducing</b> bugs is proven.",
   };
@@ -413,11 +453,15 @@ $("#compare").innerHTML = MEASURED.map((m) => `
   </tr>`).join("");
 
 $("#byFly").onclick = () => setDriver(false);
-$("#byHuman").onclick = () => { setDriver(true); (gtaEmp ? $("#gta") : doomEmp ? $("#doom") : $("#game")).focus?.(); };
+$("#byHuman").onclick = () => {
+  setDriver(true);
+  (byoEmp ? $("#byo") : gtaEmp ? $("#gta") : doomEmp ? $("#doom") : $("#game")).focus?.();
+};
 
 $("#toLab").onclick = () => {
-  doomEmp = null; gtaEmp = null;
+  doomEmp = null; gtaEmp = null; byoEmp = null;
   if (gta) gta.releaseAll();
+  if (byo) byo.releaseAll();
   setPlaceButtons("lab");
   notePlace("lab");
 };
@@ -435,7 +479,8 @@ $("#toGta").onclick = async () => {
     }
     gtaLoading = false; $("#toGta").textContent = "GTA1";
   }
-  doomEmp = null; gtaEmp = sel;
+  doomEmp = null; gtaEmp = sel; byoEmp = null;
+  if (byo) byo.releaseAll();
   gta.byHuman = humanMode;
   gtaQA.reported.clear(); gtaQA.recent.length = 0; gtaQA.same = 0;
   setPlaceButtons("gta"); notePlace("gta"); gtaAuto = false;
@@ -455,12 +500,67 @@ $("#toDoom").onclick = async () => {
     }
     doomLoading = false; $("#toDoom").textContent = "DOOM";
   }
-  gtaEmp = null; doomEmp = sel;
+  gtaEmp = null; doomEmp = sel; byoEmp = null;
+  if (byo) byo.releaseAll();
   doom.byHuman = humanMode;
   if (gta) gta.releaseAll();
   doomQA.reported.clear(); doomQA.recent.length = 0; doomQA.same = 0;
   setPlaceButtons("doom"); notePlace("doom"); gtaAuto = false;
 };
+
+/* ── 아무 게임이나 붙이기 ─────────────────────── */
+function goByo() {
+  gtaEmp = null; doomEmp = null;
+  if (gta) gta.releaseAll();
+  setPlaceButtons("byo"); notePlace("byo"); gtaAuto = false;
+  if (byo && byo.ready && sel && sel.ready) byoEmp = sel;
+}
+
+/** 붙인다. 실패하면 이유를 그대로 화면에 쓴다 — 조용히 실패하지 않는다. */
+async function attach(work, what) {
+  $("#byoNote").innerHTML = `Attaching <b>${esc(what)}</b>…`;
+  byo = byo || new Byo($("#byo"));
+  byo.byHuman = humanMode;
+  try {
+    await work(byo);
+  } catch (err) {
+    byoEmp = null;
+    $("#byoNote").innerHTML =
+      `<span style="color:var(--red)">Could not attach ${esc(what)}.</span> ${esc(err.message || err)}`;
+    return;
+  }
+  byoQA.reported.clear(); byoQA.recent.length = 0; byoQA.same = 0; byoQA.last = 0;
+  goByo();
+  byoEmp = sel && sel.ready ? sel : null;
+  $("#byoNote").innerHTML =
+    `Attached <b>${esc(byo.label)}</b> — ${byo.canvas.width}×${byo.canvas.height} canvas. ` +
+    `The fly is driving it with arrow keys and WASD. Findings appear on the right.`;
+}
+
+$("#toByo").onclick = goByo;
+$("#byoSample").onclick = () => attach(
+  (b) => fetch(new URL("./samples/rover.html", import.meta.url).href)
+    .then((r) => r.text()).then((t) => b.loadHtml(t, "rover.html")),
+  "the sample");
+$("#byoGo").onclick = () => {
+  const u = $("#byoUrl").value.trim();
+  if (u) attach((b) => b.loadUrl(u), u);
+};
+$("#byoUrl").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#byoGo").click(); });
+
+const drop = $("#drop");
+const picker = Object.assign(document.createElement("input"),
+  { type: "file", accept: ".html,.htm,text/html" });
+picker.onchange = () => picker.files[0] && attach((b) => b.loadFile(picker.files[0]), picker.files[0].name);
+drop.onclick = () => picker.click();
+for (const ev of ["dragenter", "dragover"])
+  drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("over"); });
+for (const ev of ["dragleave", "drop"])
+  drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("over"); });
+drop.addEventListener("drop", (e) => {
+  const f = e.dataTransfer.files[0];
+  if (f) attach((b) => b.loadFile(f), f.name);
+});
 
 for (const [btn, what] of [["#cutSteer", "steer"], ["#cutEyeL", "eyeL"], ["#heal", "heal"]])
   $(btn).onclick = () => sel && sel.ready && sel.worker.postMessage({ t: "lesion", what });

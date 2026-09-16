@@ -1,0 +1,51 @@
+<!doctype html><meta charset="utf-8"><title>Rover — sample target</title>
+<style>html,body{margin:0;background:#07070a;overflow:hidden}canvas{display:block}</style>
+<canvas id="c" width="480" height="360"></canvas>
+<script>
+/* 샘플 표적 게임.
+   Fly Worker 가 "남의 게임"에 붙는 경로를 보여주기 위한 자체 완결형 HTML 이다.
+   우리 코드를 전혀 모르고, 아무것도 내보내지 않는다. 캔버스 하나와 키 입력뿐이다.
+   버그 두 개를 일부러 심어 놨다 (아래 FREEZE/LOOP 주석). */
+const c = document.getElementById('c'), x = c.getContext('2d');
+const K = {};
+addEventListener('keydown', e => K[e.code] = true);
+addEventListener('keyup',   e => K[e.code] = false);
+
+let px = 240, py = 180, a = 0, t = 0, frozen = false, loop = 0;
+const walls = [];
+for (let i = 0; i < 22; i++)
+  walls.push({ x: (i * 97 + 31) % 440 + 10, y: (i * 61 + 17) % 320 + 10, w: 26, h: 26 });
+
+function step() {
+  t++;
+  // ── 심어둔 버그 1 (FREEZE): 오른쪽 끝 띠에 들어가면 렌더 루프가 죽는다
+  if (px > 452) frozen = true;
+  if (frozen) return;                       // 이후 화면이 한 픽셀도 바뀌지 않는다
+
+  const L = K.ArrowLeft || K.KeyA, R = K.ArrowRight || K.KeyD, F = K.ArrowUp || K.KeyW;
+  if (L) a -= 0.06;
+  if (R) a += 0.06;
+  const sp = F ? 2.1 : 0.55;
+  const nx = px + Math.cos(a) * sp, ny = py + Math.sin(a) * sp;
+  const hit = walls.some(w => nx > w.x && nx < w.x + w.w && ny > w.y && ny < w.y + w.h);
+  if (!hit) { px = nx; py = ny; }
+  px = Math.max(4, Math.min(476, px));
+  py = Math.max(4, Math.min(356, py));
+
+  // ── 심어둔 버그 2 (LOOP): 왼쪽 아래 구석에서 화면이 두 장 사이를 왕복한다
+  if (px < 30 && py > 330) loop = (loop + 1) % 2; else loop = 0;
+
+  x.fillStyle = '#07070a'; x.fillRect(0, 0, 480, 360);
+  x.fillStyle = loop ? '#141a2a' : '#10141f';
+  for (const w of walls) x.fillRect(w.x, w.y, w.w, w.h);
+  x.fillStyle = '#2b6fff';
+  x.fillRect(440, 0, 40, 360);              // 위험 구역(버그 1)
+  x.save(); x.translate(px, py); x.rotate(a);
+  x.fillStyle = '#30d158'; x.fillRect(-7, -5, 14, 10);
+  x.fillStyle = '#f5f5f7'; x.fillRect(5, -2, 5, 4);
+  x.restore();
+  x.fillStyle = '#6e6e73'; x.font = '11px monospace';
+  x.fillText('rover · f' + t, 8, 14);
+}
+(function raf() { step(); requestAnimationFrame(raf); })();
+</script>

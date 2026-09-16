@@ -36,6 +36,7 @@ table.cmp tr.hi td{color:var(--accent)}
           <button id="toGta" class="on">GTA1</button>
           <button id="toDoom">DOOM</button>
           <button id="toLab">Lab</button>
+          <button id="toByo">Yours</button>
         </div>
         <div class="seg">
           <button id="byFly" class="on">Auto</button>
@@ -47,6 +48,7 @@ table.cmp tr.hi td{color:var(--accent)}
         <canvas id="gta" width="640" height="400"></canvas>
         <canvas id="doom" width="320" height="200"></canvas>
         <canvas id="game" width="320" height="240"></canvas>
+        <iframe id="byo" title="Your game" sandbox="allow-scripts allow-same-origin"></iframe>
         <div class="hud">
           <span class="chip mono" id="bPos">—</span>
           <span class="chip mono" id="bFrame">0f</span>
@@ -75,6 +77,20 @@ table.cmp tr.hi td{color:var(--accent)}
             <button class="pol" data-p="straight">Straight</button>
           </div>
           <div class="muted" id="polNote" style="margin-top:8px"></div>
+        </div>
+
+        <div id="byoBox" style="margin-top:18px;display:none">
+          <div class="k" style="font-size:12.5px;color:var(--fg3);margin-bottom:7px">Your game — attach anything that draws to a canvas</div>
+          <div class="drop" id="drop">Drop an <b>.html</b> game here, or click to pick one</div>
+          <div class="byorow">
+            <input id="byoUrl" placeholder="https://… (only if the host allows cross-origin reads)">
+            <button class="plain" id="byoGo">Attach</button>
+            <button class="plain" id="byoSample">Sample</button>
+          </div>
+          <div class="muted" id="byoNote" style="margin-top:9px">
+            We inject arrow keys and WASD, read the canvas back as the fly's eyes, and watch for
+            frozen or looping frames. No source access and no cooperation from the game is needed.
+          </div>
         </div>
 
         <div class="muted" id="humanNote" style="margin-top:14px"></div>
@@ -178,6 +194,11 @@ table.cmp tr.hi td{color:var(--accent)}
         symptoms, and stores the input sequence so any finding replays exactly. It attaches to
         games that expose no interface at all — GTA1 here is driven by synthetic key events with
         the WebGL framebuffer intercepted.<br><br>
+        <b>That claim is only true if it attaches to a game we have never seen</b>, so you can
+        test it: open the <b>Yours</b> workplace above and drop any HTML game in. It loads into a
+        same-origin frame, takes arrow keys and WASD, and runs the same detectors. What does
+        <i>not</i> work is written down too — cross-origin URLs, DOM-only games, tainted canvases,
+        and exact replay outside the Lab.<br><br>
         <b>What generates the input is a swappable policy</b>, and one of them is a real fruit-fly
         connectome — 138,639 neurons, steering read from descending neurons with no correction.
         We measured it against noise on the same budget. <b>It loses.</b> That result is on this
