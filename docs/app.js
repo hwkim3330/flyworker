@@ -10,6 +10,7 @@ import { Doom } from "./doom.js";
 import { Brain3D } from "./brain3d.js";
 import { Gta } from "./gta.js";
 import { normalizeField } from "./vision.js";
+import { POLICIES, MEASURED } from "./policy.js";
 import { QA, replay } from "./qa.js";
 
 const $ = (s) => document.querySelector(s);
@@ -106,6 +107,9 @@ function tick() {
   for (const e of company) {
     if (!e.ready) continue;
 
+    // 정책이 초파리가 아니면 여기서 입력을 만든다. 뇌는 계속 돌며 화면에 보인다.
+    if (policyFn) { const [sv, tv] = policyFn(); e.steer = sv; e.thrust = tv; }
+
     // ── GTA1 근무 ──
     if (e === gtaEmp && gta && gta.ready) {
       gta.drive(e.steer, e.thrust);
@@ -189,8 +193,25 @@ function draw() {
   $("#game").classList.toggle("showing", !onDoom && !onGta);
   $("#doom").classList.toggle("showing", onDoom);
   $("#gta").classList.toggle("showing", onGta);
-  if (onGta) { drawMeters(e); return; }                 // GTA는 자기 캔버스에 직접 그린다
-  if (onDoom) { doom.draw(dctx); drawMeters(e); return; }
+  $("#who").textContent = `${e.name} · ${e.id}`;
+  // 초파리가 보는 것은 근무지와 무관하게 늘 보여준다
+  drawEye(eyeLc, e.vision, 0);
+  drawEye(eyeRc, e.vision, 1);
+
+  if (onGta) {
+    $("#bPos").textContent = "GTA1";
+    $("#bFrame").textContent = `${gta.frame}f`;
+    $("#bState").textContent = gta.boot < 600 ? "Getting past the menu" : "Driving";
+    drawMeters(e); return;                              // GTA는 자기 캔버스에 직접 그린다
+  }
+  if (onDoom) {
+    doom.draw(dctx);
+    $("#bPos").textContent = "DOOM";
+    $("#bFrame").textContent = `${doom.frame}f`;
+    $("#bState").textContent = doom.bootFrames < 140 ? "Getting past the menu" : "Playing";
+    drawMeters(e); return;
+  }
+
   e.game.draw(gctx);
   const st = e.game.state();
   $("#bPos").textContent = `(${st.x}, ${st.y})`;
@@ -198,12 +219,6 @@ function draw() {
   $("#bState").textContent = !e.ready ? e.phase
     : st.escaped ? "Out of bounds" : st.won ? "Reached goal"
     : st.hasKey ? (st.doorOpen ? "Door open" : "Has key") : "Exploring";
-  $("#who").textContent = `${e.name} · ${e.id}`;
-
-  // 눈에 들어가는 밝기 격자
-  drawEye(eyeLc, e.vision, 0);
-  drawEye(eyeRc, e.vision, 1);
-
   drawMeters(e);
 }
 
@@ -321,6 +336,13 @@ function doReplay(f) {
 /* ── 시작 ────────────────────────────────────── */
 $("#hire").onclick = hire;
 let humanMode = false;
+let policyId = "fly", policyFn = null;
+function setPolicy(id) {
+  policyId = id;
+  policyFn = POLICIES[id].make();
+  document.querySelectorAll(".pol").forEach((b) => b.classList.toggle("on", b.dataset.p === id));
+  $("#polNote").innerHTML = esc(POLICIES[id].note);
+}
 function setDriver(human) {
   humanMode = human;
   if (doom) doom.byHuman = human;
@@ -381,6 +403,15 @@ function notePlace(k) {
   $("#placeNote").innerHTML = t[k] || "";
 }
 
+document.querySelectorAll(".pol").forEach((b) => b.onclick = () => setPolicy(b.dataset.p));
+$("#compare").innerHTML = MEASURED.map((m) => `
+  <tr class="${m.id === "fly" ? "hi" : ""}">
+    <td>${esc(POLICIES[m.id].label)}</td>
+    <td class="mono">${m.pct}%</td>
+    <td class="mono">${m.kinds}</td>
+    <td class="mono" style="color:var(--fg3)">${esc(m.types)}</td>
+  </tr>`).join("");
+
 $("#byFly").onclick = () => setDriver(false);
 $("#byHuman").onclick = () => { setDriver(true); (gtaEmp ? $("#gta") : doomEmp ? $("#doom") : $("#game")).focus?.(); };
 
@@ -433,6 +464,7 @@ $("#toDoom").onclick = async () => {
 
 for (const [btn, what] of [["#cutSteer", "steer"], ["#cutEyeL", "eyeL"], ["#heal", "heal"]])
   $(btn).onclick = () => sel && sel.ready && sel.worker.postMessage({ t: "lesion", what });
+setPolicy("fly");
 hire();                       // 링크를 열면 바로 한 명 채용해 일을 시작한다
 preloadGta();                 // 커넥톰과 나란히 GTA1 을 받아둔다
 requestAnimationFrame(tick);

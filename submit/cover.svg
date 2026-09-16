@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <rect width="1920" height="1080" fill="#000"/>
+
+  <text x="100" y="112" font-family="Helvetica,Arial" font-size="54" font-weight="600" fill="#f5f5f7" letter-spacing="-1">Fly Worker</text>
+  <text x="440" y="112" font-family="Helvetica,Arial" font-size="27" fill="#86868b">A connectome that does not correct its steering</text>
+  <line x1="100" y1="146" x2="1820" y2="146" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1"/>
+
+  <!-- 핵심 문장 -->
+  <text x="100" y="236" font-family="Helvetica,Arial" font-size="44" font-weight="600" fill="#f5f5f7" letter-spacing="-0.8">A real fruit-fly brain plays games.</text>
+  <text x="100" y="296" font-family="Helvetica,Arial" font-size="44" font-weight="600" fill="#30d158" letter-spacing="-0.8">Badly. And we say so.</text>
+
+  <text x="100" y="360" font-family="Helvetica,Arial" font-size="23" fill="#a1a1a6">138,639 neurons · 2.7M connections · zero LLM inference · runs in your browser</text>
+
+  <!-- 왼쪽: 다른 구현들 -->
+  <rect x="100" y="410" width="820" height="330" rx="18" fill="#141416" stroke="#ffffff" stroke-opacity="0.09"/>
+  <text x="132" y="460" font-family="Helvetica,Arial" font-size="24" font-weight="600" fill="#f5f5f7">Who actually steers, in each implementation</text>
+  <g font-family="Helvetica,Arial" font-size="19">
+    <text x="132" y="512" fill="#a1a1a6">webgpu-fly</text>
+    <text x="360" y="512" fill="#6e6e73">hand-written sin(t×10Hz) gait</text>
+    <text x="132" y="556" fill="#a1a1a6">Xenova</text>
+    <text x="360" y="556" fill="#6e6e73">"engineered rate decoder"</text>
+    <text x="132" y="600" fill="#a1a1a6">flybrain</text>
+    <text x="360" y="600" fill="#6e6e73">brain clamped to ±0.05, atan2</text>
+    <text x="132" y="644" fill="#a1a1a6">doomfly</text>
+    <text x="360" y="644" fill="#6e6e73">+ dopamine plasticity — failed validation</text>
+    <text x="132" y="700" fill="#30d158" font-weight="600">This project</text>
+    <text x="360" y="700" fill="#30d158" font-weight="600">descending-neuron output. Nothing else.</text>
+  </g>
+
+  <!-- 오른쪽: 손상 실험 -->
+  <rect x="960" y="410" width="860" height="330" rx="18" fill="#141416" stroke="#ffffff" stroke-opacity="0.09"/>
+  <text x="992" y="460" font-family="Helvetica,Arial" font-size="24" font-weight="600" fill="#f5f5f7">Proof: cut 40 of 138,639 neurons</text>
+  <text x="992" y="494" font-family="Helvetica,Arial" font-size="18" fill="#6e6e73">0.03% — implementations that script their steering survive this</text>
+  <g font-family="Helvetica,Arial" font-size="21">
+    <text x="992" y="556" fill="#a1a1a6">intact</text>
+    <rect x="1180" y="538" width="321" height="22" rx="11" fill="#30d158" fill-opacity="0.9"/>
+    <text x="1600" y="556" fill="#f5f5f7" font-family="Menlo,monospace">0.947</text>
+
+    <text x="992" y="612" fill="#a1a1a6">40 neurons cut</text>
+    <rect x="1180" y="594" width="4" height="22" rx="2" fill="#ff453a"/>
+    <text x="1600" y="612" fill="#ff453a" font-family="Menlo,monospace">0.000</text>
+
+    <text x="992" y="668" fill="#a1a1a6">healed</text>
+    <rect x="1180" y="650" width="380" height="22" rx="11" fill="#30d158" fill-opacity="0.9"/>
+    <text x="1600" y="668" fill="#f5f5f7" font-family="Menlo,monospace">1.121</text>
+  </g>
+  <text x="992" y="716" font-family="Helvetica,Arial" font-size="18" fill="#6e6e73">left / right direction separation, Hz</text>
+
+  <!-- 하단 3칸 -->
+  <g font-family="Helvetica,Arial">
+    <rect x="100" y="782" width="548" height="150" rx="18" fill="#141416" stroke="#ffffff" stroke-opacity="0.09"/>
+    <text x="132" y="828" font-size="23" font-weight="600" fill="#f5f5f7">Three workplaces</text>
+    <text x="132" y="864" font-size="18" fill="#86868b">GTA1 · DOOM · a lab game with four</text>
+    <text x="132" y="892" font-size="18" fill="#86868b">bugs deliberately planted in it</text>
+
+    <rect x="686" y="782" width="548" height="150" rx="18" fill="#141416" stroke="#ffffff" stroke-opacity="0.09"/>
+    <text x="718" y="828" font-size="23" font-weight="600" fill="#f5f5f7">Findings reproduce exactly</text>
+    <text x="718" y="864" font-size="18" fill="#86868b">seed + input sequence — the hardest</text>
+    <text x="718" y="892" font-size="18" fill="#86868b">thing in QA stops existing. 12/12</text>
+
+    <rect x="1272" y="782" width="548" height="150" rx="18" fill="#141416" stroke="#ffffff" stroke-opacity="0.09"/>
+    <text x="1304" y="828" font-size="23" font-weight="600" fill="#f5f5f7">Limits are measured</text>
+    <text x="1304" y="864" font-size="18" fill="#86868b">ON pathway dead, T4 never fires —</text>
+    <text x="1304" y="892" font-size="18" fill="#86868b">wiring without dynamics. All published.</text>
+  </g>
+
+  <text x="100" y="1000" font-family="Menlo,monospace" font-size="21" fill="#6e6e73">FlyWire v783 (CC-BY 4.0) · Shiu et al. LIF · doom.wasm · carnage3d (MIT)</text>
+  <text x="100" y="1036" font-family="Menlo,monospace" font-size="21" fill="#0a84ff">huggingface.co/spaces/kimhyunwoo/flyworker</text>
+</svg>

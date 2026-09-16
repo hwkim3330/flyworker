@@ -3,17 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Fly Worker</title>
+<title>Fly Worker — a QA fuzzer you can plug any policy into</title>
 <meta name="description" content="A real fruit-fly connectome playing games in your browser. The only implementation that does not correct its steering. 138,639 neurons, zero LLM inference.">
 <meta name="theme-color" content="#000000">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🪰</text></svg>">
 <link rel="stylesheet" href="app.css">
+<style>
+table.cmp{width:100%;border-collapse:collapse;font-size:13.5px}
+table.cmp th{text-align:left;font-weight:500;color:var(--fg3);font-size:12px;padding:0 10px 8px 0;border-bottom:1px solid var(--line)}
+table.cmp td{padding:9px 10px 9px 0;border-bottom:1px solid var(--line)}
+table.cmp tr:last-child td{border-bottom:0}
+table.cmp tr.hi td{color:var(--accent)}
+</style>
 </head>
 <body>
 
 <header>
   <h1>Fly Worker</h1>
-  <span class="sub">A connectome that does not correct its steering</span>
+  <span class="sub">A QA fuzzer for browser games. One of its policies is a real fly brain.</span>
   <div class="sp"></div>
   <span class="meta">FlyWire v783 · <b>138,639</b> neurons · <b>2.7M</b> connections · <b>0</b> LLM calls</span>
 </header>
@@ -31,7 +38,7 @@
           <button id="toLab">Lab</button>
         </div>
         <div class="seg">
-          <button id="byFly" class="on">Fly</button>
+          <button id="byFly" class="on">Auto</button>
           <button id="byHuman">You</button>
         </div>
       </div>
@@ -57,6 +64,17 @@
         <div class="eyes">
           <div><div class="k">Left eye</div><canvas id="eyeL" width="8" height="12"></canvas></div>
           <div><div class="k">Right eye</div><canvas id="eyeR" width="8" height="12"></canvas></div>
+        </div>
+
+        <div style="margin-top:16px">
+          <div class="k" style="font-size:12.5px;color:var(--fg3);margin-bottom:7px">Policy — what generates the input</div>
+          <div class="seg">
+            <button class="pol on" data-p="fly">Fly connectome</button>
+            <button class="pol" data-p="smooth">Smoothed noise</button>
+            <button class="pol" data-p="uniform">Uniform noise</button>
+            <button class="pol" data-p="straight">Straight</button>
+          </div>
+          <div class="muted" id="polNote" style="margin-top:8px"></div>
         </div>
 
         <div class="muted" id="humanNote" style="margin-top:14px"></div>
@@ -121,6 +139,22 @@
     </div>
 
     <div class="panel">
+      <div class="hd"><h2>Policies, measured</h2><span class="tag">24,000 frames each, lab game</span></div>
+      <div class="bd">
+        <table class="cmp">
+          <tr><th>Policy</th><th>Coverage</th><th>Symptom types</th><th></th></tr>
+          <tbody id="compare"></tbody>
+        </table>
+        <div class="note" style="margin-top:12px">
+          <b>The fly loses.</b> Smoothed noise explores more and finds all five symptom types;
+          the fly finds two. We publish this because the product is the framework, not the policy.<br><br>
+          <b>Bug count is a fake metric.</b> "Straight ahead" finds 95 bugs — every one of them the
+          same freeze. Symptom <i>diversity</i> is what matters.
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
       <div class="hd"><h2>Reproduce</h2></div>
       <div class="stage" style="aspect-ratio:4/3">
         <canvas id="replay" class="showing" width="320" height="240"></canvas>
@@ -140,11 +174,14 @@
   <div class="panel" style="margin-top:20px">
     <div class="bd">
       <div class="note">
-        <b>This fly is bad at games.</b> It does not reach the goal. Correlation between its
-        steering and the direction of light is zero across 8 seeds.
-        Other connectome projects move convincingly — open their code and you find the steering
-        hand-written or the brain's contribution clamped. This one uses descending-neuron output
-        and nothing else. <b>Stumbling around is what the technology actually does today.</b>
+        <b>The product is the framework.</b> It reads the screen, injects input, watches for
+        symptoms, and stores the input sequence so any finding replays exactly. It attaches to
+        games that expose no interface at all — GTA1 here is driven by synthetic key events with
+        the WebGL framebuffer intercepted.<br><br>
+        <b>What generates the input is a swappable policy</b>, and one of them is a real fruit-fly
+        connectome — 138,639 neurons, steering read from descending neurons with no correction.
+        We measured it against noise on the same budget. <b>It loses.</b> That result is on this
+        page rather than hidden, because a framework outlives any policy plugged into it.
       </div>
 
       <details>
