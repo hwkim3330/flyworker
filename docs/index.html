@@ -24,14 +24,43 @@ table.cmp tr.hi td{color:var(--accent)}
 
 <header>
   <h1>Fly Worker</h1>
-  <span class="sub">A QA fuzzer for browser games. One of its policies is a real fly brain.</span>
+  <span class="sub">a QA fuzzer you can plug any policy into</span>
   <div class="sp"></div>
-  <span class="meta">FlyWire v783 · <b>138,639</b> neurons · <b>2.7M</b> connections · <b>0</b> LLM calls</span>
+  <span class="meta">FlyWire v783 · 138,639 neurons · 0 LLM calls</span>
 </header>
+
+<div class="hero">
+  <h2>It plays your game,<br>finds the bugs,<br><em>and loses to noise.</em></h2>
+  <p class="lead">A fuzzer that attaches to a browser game with no cooperation from it —
+  synthetic keys in, framebuffer out — finds where the game breaks, and replays every finding
+  exactly. <b>What generates the input is a swappable policy.</b></p>
+  <p class="lead">One of those policies is a real fruit-fly connectome: 138,639 neurons
+  running as a spiking network in this page, steering read from descending neurons with no
+  correction. We measured it against random noise on the same budget.
+  <b>It loses.</b> That table is on this page rather than hidden, because the framework
+  outlives any policy plugged into it.</p>
+  <div class="scroll">Scroll</div>
+</div>
+
+<div class="spec">
+  <div><div class="n">138,639</div><div class="l">neurons stepped in your browser</div></div>
+  <div><div class="n">0</div><div class="l">LLM calls · every rule deterministic</div></div>
+  <div><div class="n">12/12</div><div class="l">findings replay to the exact pixel</div></div>
+  <div><div class="n">0.03%</div><div class="l">of the brain, cut, kills the steering</div></div>
+</div>
+
+<div class="secttl">
+  <div class="eyebrow">The workbench</div>
+  <h3>Watch it work.</h3>
+  <p>Pick a workplace. <b>GTA1</b> has no interface to speak of, so the fly drives it with
+  synthetic key events and we intercept the WebGL framebuffer to see the screen.
+  <b>Yours</b> takes any HTML game you drop in. Then swap the policy underneath and watch the
+  same framework behave differently.</p>
+</div>
 
 <div class="page">
 
-  <div class="hero">
+  <div class="workbench">
     <div class="panel">
       <div class="hd">
         <h2 id="who">Workplace</h2>
@@ -152,6 +181,18 @@ table.cmp tr.hi td{color:var(--accent)}
       </div>
     </div>
   </div>
+
+</div>
+
+<div class="secttl">
+  <div class="eyebrow">The output</div>
+  <h3>Every finding replays to the exact pixel.</h3>
+  <p>The game is deterministic given a seed and an input sequence, so storing the inputs is
+  enough to bring a bug back. <b>The hardest thing in QA — "cannot reproduce" — stops existing.</b>
+  Press Replay on any finding, or export the whole session as a single self-contained report.</p>
+</div>
+
+<div class="page">
 
   <div class="grid2">
     <div class="panel">

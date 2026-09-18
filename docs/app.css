@@ -30,31 +30,57 @@ h1,h2,h3{margin:0;letter-spacing:-.022em;font-weight:600}
 
 /* ── 상단 ─────────────────────────────── */
 header{
-  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
-  padding:18px 28px;border-bottom:1px solid var(--line);
-  position:sticky;top:0;z-index:40;
-  background:rgba(0,0,0,.72);backdrop-filter:saturate(180%) blur(20px);
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:16px 40px;border-bottom:1px solid var(--line);
+  position:fixed;top:0;left:0;right:0;z-index:50;
+  background:rgba(0,0,0,.6);backdrop-filter:saturate(180%) blur(24px);
 }
-header h1{font-size:19px}
-header .sub{font-size:13.5px;color:var(--fg3)}
+header h1{font-size:15px;letter-spacing:-.02em}
+header .sub{font-size:13px;color:var(--fg3)}
+header .meta{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:11.5px}
+
+/* ── 히어로 ─────────────────────────────── */
+.hero{min-height:86vh;display:flex;flex-direction:column;justify-content:center;
+  padding:130px 40px 70px;max-width:1240px;margin:0 auto}
+.hero h2{font-size:clamp(38px,6.6vw,96px);letter-spacing:-.045em;line-height:1.04;font-weight:600;margin:0}
+.hero h2 em{font-style:normal;color:var(--fg3)}
+.hero .lead{margin-top:30px;max-width:54ch;font-size:clamp(15.5px,1.45vw,19px);line-height:1.64;color:var(--fg2)}
+.hero .lead b{color:var(--fg);font-weight:500}
+.hero .scroll{margin-top:52px;font-size:12px;color:var(--fg3);letter-spacing:.14em;text-transform:uppercase}
+
+/* ── 제원표 ─────────────────────────────── */
+.spec{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:40px}
+.spec div{background:#000;padding:30px 36px;display:flex;flex-direction:column;justify-content:flex-start}
+.spec .n{font-size:clamp(24px,2.7vw,38px);font-weight:600;letter-spacing:-.045em;line-height:1;white-space:nowrap}
+.spec .n small{font-size:.45em;color:var(--fg3);font-weight:400;letter-spacing:-.01em;white-space:nowrap}
+.spec .l{margin-top:11px;font-size:12.5px;color:var(--fg3);line-height:1.45;max-width:24ch}
+@media(max-width:900px){.spec{grid-template-columns:repeat(2,1fr)}.spec div{padding:24px 20px}}
+@media(max-width:700px){.hero{padding:104px 20px 56px;min-height:auto}}
 .sp{flex:1}
 .meta{font-size:12.5px;color:var(--fg3)}
 .meta b{color:var(--fg2);font-weight:500}
 
 /* ── 레이아웃 ─────────────────────────── */
-.page{max-width:1420px;margin:0 auto;padding:26px 28px 80px}
-.hero{display:grid;grid-template-columns:1.55fr 1fr;gap:20px;align-items:start}
-@media(max-width:1080px){.hero{grid-template-columns:1fr}}
+.page{max-width:1420px;margin:0 auto;padding:0 28px 80px}
+.workbench{display:grid;grid-template-columns:1.55fr 1fr;gap:20px;align-items:start}
+@media(max-width:1080px){.workbench{grid-template-columns:1fr}}
 
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-.panel .hd{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-.panel .hd h2{flex:none;white-space:nowrap}
-.panel .hd h2{font-size:14.5px}
-.panel .hd .tag{font-size:12.5px;color:var(--fg3)}
-.panel .bd{padding:18px}
+.panel{background:#0b0b0d;border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.panel .hd{display:flex;align-items:baseline;gap:12px;padding:20px 24px 16px;flex-wrap:wrap}
+.panel .hd h2{flex:none;white-space:nowrap;font-size:19px;font-weight:600;letter-spacing:-.03em}
+.panel .hd .tag{font-size:12px;color:var(--fg3);font-family:"SF Mono",ui-monospace,Menlo,monospace}
+.panel .bd{padding:0 24px 24px}
+
+/* 구역 제목 — 히어로와 같은 위계 */
+.secttl{max-width:1420px;margin:70px auto 0;padding:0 28px}
+.secttl .eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3);margin-bottom:16px}
+.secttl h3{font-size:clamp(26px,3.2vw,40px);letter-spacing:-.04em;max-width:22ch;font-weight:600;margin:0}
+.secttl p{margin:18px 0 0;max-width:56ch;font-size:16px;line-height:1.66;color:var(--fg2)}
+.secttl p b{color:var(--fg);font-weight:500}
 
 /* ── 화면 ─────────────────────────────── */
-.stage{position:relative;aspect-ratio:4/3;background:#000;overflow:hidden}
+.stage{position:relative;aspect-ratio:4/3;background:#000;overflow:hidden;border-radius:14px;border:1px solid var(--line)}
 .stage canvas,.stage iframe{position:absolute;inset:0;width:100%;height:100%;display:block;
   object-fit:contain;image-rendering:pixelated;opacity:0;transition:opacity .22s ease;pointer-events:none}
 .stage canvas.showing,.stage iframe.showing{opacity:1;pointer-events:auto}
@@ -86,11 +112,11 @@ button.danger{color:var(--red)}
 
 /* ── 계기 ─────────────────────────────── */
 .gauges{display:grid;gap:11px;margin-top:16px}
-.g{display:grid;grid-template-columns:62px 1fr 56px;align-items:center;gap:12px}
-.g .k{font-size:12.5px;color:var(--fg3)}
-.g .t{height:4px;background:rgba(255,255,255,.08);border-radius:99px;position:relative;overflow:hidden}
+.g{display:grid;grid-template-columns:86px 1fr 62px;align-items:center;gap:14px}
+.g .k{font-size:11.5px;color:var(--fg3);text-transform:uppercase;letter-spacing:.1em}
+.g .t{height:3px;background:rgba(255,255,255,.08);border-radius:99px;position:relative;overflow:hidden}
 .g .t i{position:absolute;top:0;bottom:0;background:var(--fg2);border-radius:99px;transition:.12s}
-.g .v{font-size:12.5px;text-align:right;color:var(--fg2)}
+.g .v{font-size:14px;text-align:right;color:var(--fg);font-family:"SF Mono",ui-monospace,Menlo,monospace}
 
 .eyes{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
 .eyes .k{font-size:11.5px;color:var(--fg3);margin-bottom:6px}
@@ -100,9 +126,9 @@ button.danger{color:var(--red)}
 /* ── 숫자 ─────────────────────────────── */
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
   border-top:1px solid var(--line)}
-.stat{background:var(--surface);padding:14px 16px}
+.stat{background:#0b0b0d;padding:20px 22px}
 .stat .k{font-size:11.5px;color:var(--fg3)}
-.stat .v{font-size:21px;font-weight:600;letter-spacing:-.02em;margin-top:3px}
+.stat .v{font-size:26px;font-weight:600;letter-spacing:-.04em;margin-top:5px}
 
 /* ── 사원 ─────────────────────────────── */
 .emp{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
@@ -185,3 +211,10 @@ footer{color:var(--fg3);font-size:12.5px;text-align:center;padding:30px;border-t
   .chip{padding:3px 8px;font-size:11px}
   #bugs{max-height:none}              /* 폰에서는 칸 안에 칸을 만들지 않는다 */
 }
+
+/* ── 스크롤 진입 ─────────────────────────
+   한 번, 짧게, 위로만. 과하면 싸구려가 된다. */
+.rise{opacity:0;transform:translateY(16px);
+  transition:opacity .65s cubic-bezier(.2,.8,.2,1),transform .65s cubic-bezier(.2,.8,.2,1)}
+.rise.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){.rise{opacity:1;transform:none;transition:none}}

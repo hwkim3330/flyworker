@@ -624,3 +624,13 @@ setPolicy("fly");
 hire();                       // 링크를 열면 바로 한 명 채용해 일을 시작한다
 preloadGta();                 // 커넥톰과 나란히 GTA1 을 받아둔다
 requestAnimationFrame(tick);
+
+/* ── 스크롤 진입 ───────────────────────────────── */
+{
+  const els = document.querySelectorAll(".secttl > *, .spec > div, .grid2 > .panel, .page > .panel");
+  els.forEach((e) => e.classList.add("rise"));
+  const io = new IntersectionObserver((rows) => {
+    for (const r of rows) if (r.isIntersecting) { r.target.classList.add("in"); io.unobserve(r.target); }
+  }, { rootMargin: "0px 0px -6% 0px", threshold: 0.04 });
+  els.forEach((e) => io.observe(e));
+}
