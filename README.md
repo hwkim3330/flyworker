@@ -4,6 +4,10 @@
 
 🔗 Live: https://hwkim3330.github.io/flyworker/ · https://huggingface.co/spaces/kimhyunwoo/flyworker
 
+Fly Worker drives a browser game with synthetic key input, watches only the framebuffer, flags bugs with five deterministic rules, and writes an HTML report with evidence frames and a replay file that reproduces each finding. One of the swappable steering policies is a spiking simulation of the FlyWire v783 fruit-fly connectome (138,639 neurons); it is benchmarked against random baselines and published even though it loses.
+
+[![Fly Worker running GTA1 with the connectome policy](submit/shots/1-gta.png)](https://hwkim3330.github.io/flyworker/)
+
 ---
 
 **브라우저 게임을 스스로 플레이해 버그를 찾고, 찾은 것을 그대로 재현하는 QA 퍼저.**
