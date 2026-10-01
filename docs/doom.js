@@ -96,6 +96,18 @@ export class Doom {
   /** 프레임버퍼를 캔버스에 그린다 */
   draw(ctx) {
     if (!this.fbPtr || !this.img) return;
+    /*
+     * 캔버스 백버퍼를 둠이 실제로 쓰는 프레임버퍼 크기에 맞춘다.
+     *
+     * putImageData 는 크기를 줄여주지 않는다. 캔버스가 320×200 으로 박혀 있는데
+     * 둠이 640×400 으로 그리면 좌상단 320×200 만 남고 나머지가 잘린다.
+     * HTML 에 적어둔 320×200 을 믿고 있다가 화면이 잘린 채로 나갔다.
+     * 실제 크기는 onGameInit 이 알려주므로 여기서 맞춘다.
+     */
+    if (ctx.canvas.width !== this.w || ctx.canvas.height !== this.h) {
+      ctx.canvas.width = this.w;
+      ctx.canvas.height = this.h;
+    }
     const src = new Uint8Array(this.mem.buffer, this.fbPtr, this.w * this.h * 4);
     const d = this.rgba;
     for (let i = 0, n = this.w * this.h; i < n; i++) {

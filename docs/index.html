@@ -106,6 +106,8 @@ table.cmp tr.hi td{color:var(--accent)}
           <div class="seg">
             <button class="pol on" data-p="fly">Fly connectome</button>
             <button class="pol" data-p="hybrid">Fly + noise</button>
+            <button class="pol" data-p="learn">Fly + learning</button>
+            <button class="pol" data-p="mismatch">Blindfolded fly</button>
             <button class="pol" data-p="smooth">Smoothed noise</button>
             <button class="pol" data-p="uniform">Uniform noise</button>
             <button class="pol" data-p="straight">Straight</button>
@@ -261,7 +263,18 @@ table.cmp tr.hi td{color:var(--accent)}
         <b>What generates the input is a swappable policy</b>, and one of them is a real fruit-fly
         connectome — 138,639 neurons, steering read from descending neurons with no correction.
         We measured it against noise on the same budget. <b>It loses.</b> That result is on this
-        page rather than hidden, because a framework outlives any policy plugged into it.
+        page rather than hidden, because a framework outlives any policy plugged into it.<br><br>
+        <b>Getting that result right took three tries, and the middle one was wrong in our favour.</b>
+        Our first answer was that the connectome adds nothing to noise (−3%p). Then a reader watched
+        the fly on this page and said it was driving in circles. It was: a residual <span class="mono">+0.044</span>
+        bias left the fly turning a 40px circle on a 320×240 board. One adaptation constant fixed it,
+        the fly went 42% → 50%, and the paired control flipped sign — <b>+11.4%p, t = 4.63</b>. That is a
+        real number, and stopping there would have let us announce that the connectome beats noise.<br><br>
+        So we built the control that separates <i>information</i> from <i>amplitude</i>: show the brain a
+        <b>completely different board</b> and drive this one with its output. Same amplitude, same temporal
+        structure, no relationship to the screen. The blindfolded fly scores <b>66%</b> against the seeing
+        fly's <b>62%</b> — indistinguishable (−3.2%p, t = 0.98). <b>What the connectome supplies is steering
+        amplitude, not sight.</b> The first answer was right; its reasoning was not.
       </div>
 
       <details>
@@ -291,21 +304,47 @@ table.cmp tr.hi td{color:var(--accent)}
       </details>
 
       <details>
-        <summary>Why it fails — wiring without dynamics</summary>
+        <summary>Why it fails — the signal dies before it arrives</summary>
         <div class="note">
-          We went after this properly. Flies see motion, not brightness, so we fed ON/OFF temporal
-          contrast into the anatomically correct cells — L1 for ON, L2 for OFF.<br><br>
-          <span class="mono">L1 125Hz → Mi1 0.08Hz, Tm3 0.00Hz, Mi4 0.00Hz</span> — ON pathway dead.<br>
-          <span class="mono">L2 125Hz → Tm1 26.0Hz, Tm2 15.5Hz, Tm4 21.0Hz</span> — OFF pathway fine.<br><br>
-          The fly's ON pathway works by <b>sign inversion through inhibition</b>: L1 inhibits Mi1,
-          Mi1 inverts again. Our model has <b>no baseline firing</b>, so inhibiting a silent neuron
-          does nothing. T4, which needs ON input, never fires.<br><br>
-          Adding tonic drive woke HS cells from 0 to 6.7 Hz — but direction selectivity stayed at zero.
-          Doubling the visual connectome (2.7M → 5.9M edges) left T4 at 0.0 Hz.<br><br>
-          <b>The real reason: T4/T5 direction selectivity comes from neuron-specific timing</b> —
-          Mi9 slow, Mi1/Tm3 fast, Mi4 delayed inhibition. Our model gives every neuron the same
-          τ<sub>m</sub> = 20 ms, τ<sub>syn</sub> = 5 ms. <b>The connectome gives you wiring, not dynamics.</b>
-          No amount of better input fixes that.
+          We went after this properly, got it wrong once, and measured our way out. Both versions
+          are here because the wrong one was on this page for a while.<br><br>
+
+          <b>What we used to say.</b> Flies see motion, not brightness, so we fed ON/OFF temporal
+          contrast into L1 (ON) and L2 (OFF).
+          <span class="mono">L1 125Hz → Mi1 0.08Hz</span> — ON pathway dead;
+          <span class="mono">L2 125Hz → Tm1 26.0Hz</span> — OFF pathway fine. We concluded that the
+          ON pathway relies on <i>sign inversion through inhibition</i>, that our model has no
+          baseline firing to inhibit, and that T4 therefore never fires — and that the deeper cause
+          was uniform time constants, since T4/T5 direction selectivity comes from neuron-specific
+          timing.<br><br>
+
+          <b>Both halves were wrong.</b> We gave the model per-neuron membrane time constants and
+          tried five configurations. T4 stayed at <b>0.00 Hz</b> in every one. Then we counted the
+          wiring directly instead of reasoning about it:<br>
+          <span class="mono">T4: 47,625 incoming connections — from L1: <b>0</b>, from L2: <b>0</b>,
+          from medulla: 24,045</span><br>
+          T4 receives nothing from L1 or L2. Our explanation had been describing a pathway that does
+          not exist in this connectome.<br><br>
+
+          <b>What is actually wrong.</b> Firing rates along the chain:<br>
+          <span class="mono">optic nerve 31Hz → L1·L2 21Hz → medulla 2.6Hz → T4's own inputs 0.56Hz
+          → T4 0.00Hz</span><br>
+          Roughly 10× attenuation per stage. It is not timing, it is <b>gain</b>: one synaptic weight
+          of 0.44 cannot carry a signal through five stages to threshold.<br><br>
+
+          <b>And raising the gain makes the fly worse.</b> T4 does wake up — 0.00 → 4.32 Hz at
+          W<sub>SYN</sub> = 6 — but so does everything else, and steering is a left/right <i>ratio</i>,
+          so saturating both channels erases it. Measured on the same bench, fly policy, 3 reps:
+          <table class="mini">
+            <tr><th>W<sub>SYN</sub></th><th>T4</th><th>Map coverage</th></tr>
+            <tr><td>0.44 (shipped)</td><td>0.00 Hz</td><td><b>42%</b></td></tr>
+            <tr><td>1.5</td><td>0.43 Hz</td><td>34%</td></tr>
+            <tr><td>4.0</td><td>2.84 Hz</td><td>25%</td></tr>
+          </table>
+          So we kept 0.44. A prettier firing rate is not a better policy, and we only publish the
+          policy number. Every figure here comes from
+          <span class="mono">wiring.mjs</span>, <span class="mono">chain.mjs</span>,
+          <span class="mono">tau_test.mjs</span> and <span class="mono">gain.mjs</span> in the repo.
         </div>
       </details>
 

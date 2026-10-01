@@ -57,7 +57,33 @@ export class Brain {
     this.decayM = Math.exp(-dt / TAU_M);
     this.decayS = Math.exp(-dt / TAU_SYN);
     this.decayR = Math.exp(-dt / 50);     // 발화율 EMA
+
+    /**
+     * 뉴런별 막 시상수. 기본은 균일(null)이고, setTau 로 세포 유형마다 다르게 준다.
+     *
+     * 왜 필요한가. T4 의 방향선택성은 지연선으로 만들어진다 — 이웃한 시야
+     * 지점의 신호가 서로 다른 시간에 도착해야 "어느 쪽으로 움직였는가"가
+     * 나온다. 모든 뉴런이 같은 시상수를 쓰면 신호가 동시에 도착하고,
+     * 방향 정보는 원리적으로 생길 수 없다. 우리가 앞서 "커넥톰은 배선을
+     * 주지만 동역학은 주지 않는다"고 적은 것이 바로 이 자리다.
+     * 배선은 자료에 있지만 시상수는 자료에 없다.
+     */
+    this.decayMPer = null;
   }
+
+  /**
+   * 뉴런 묶음에 다른 막 시상수(ms)를 준다.
+   * @param indices 대상 뉴런
+   * @param tauMs   막 시상수. 크면 느리게 반응하고 오래 기억한다.
+   */
+  setTau(indices, tauMs) {
+    if (!this.decayMPer) {
+      this.decayMPer = new Float32Array(this.c.N).fill(this.decayM);
+    }
+    const d = Math.exp(-this.dt / tauMs);
+    for (const i of indices) this.decayMPer[i] = d;
+  }
+  clearTau() { this.decayMPer = null; }
 
   /** 감각 뉴런에 전류를 준다 (0~1 정규화 값을 mV로) */
   inject(indices, values, gain = 12) {
@@ -82,6 +108,7 @@ export class Brain {
     const { V, I, ext, refr, rate } = this;
     const N = this.c.N, dt = this.dt;
     const dm = this.decayM, ds = this.decayS, dr = this.decayR;
+    const dmp = this.decayMPer;          // 뉴런별 시상수 (없으면 균일)
     const sp = this.spikes, ws = this.wsyn, cut = this.cut, tn = this.tonic;
     const rnd = this.rng;
     let n = 0;
@@ -98,7 +125,8 @@ export class Brain {
       }
       const drive = I[i] + ext[i] + tn;
       // 닫힌 형태 지수 갱신 (오일러보다 안정적)
-      V[i] = V_REST + (V[i] - V_REST) * dm + drive * (1 - dm);
+      const d = dmp ? dmp[i] : dm;
+      V[i] = V_REST + (V[i] - V_REST) * d + drive * (1 - d);
       if (V[i] >= V_TH) {
         V[i] = V_RESET;
         refr[i] = REFRAC;

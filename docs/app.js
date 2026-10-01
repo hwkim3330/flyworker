@@ -10,7 +10,7 @@ import { Doom } from "./doom.js";
 import { Brain3D } from "./brain3d.js";
 import { Gta } from "./gta.js";
 import { Byo } from "./byo.js";
-import { normalizeField } from "./vision.js";
+import { normalizeField, viewKey } from "./vision.js";
 import { POLICIES, MEASURED } from "./policy.js";
 import { QA, replay } from "./qa.js";
 import { buildReport } from "./report.js";
@@ -80,6 +80,10 @@ function hire() {
     game: new Game(1000 + n * 37), qa: null,
     steer: 0, thrust: 0, dnHz: 0, spikes: 0, brainMs: 0,
     bugs: [], vision: new Float32Array(GW * GH), runs: 0, startedAt: Date.now(),
+    seen: new Set(),                 // 학습 정책의 보상용 — 이미 밟은 칸
+    // 눈 가린 초파리(mismatch)용 — 뇌에게만 보여주는 엉뚱한 판.
+    // 이 판은 화면에 안 나오고, 평활 난수로 혼자 굴러간다.
+    blind: new Game(7000 + n * 13), blindVis: new Float32Array(GW * GH), bs: 0, bt: 0.7,
   };
   emp.qa = new QA({ seed: 1000 + n * 37, W: emp.game.W, H: emp.game.H });
 
@@ -109,6 +113,13 @@ function onMsg(emp, m) {
   else if (m.t === "motor") {
     emp.steer = m.steer; emp.thrust = m.drive;
     emp.dnHz = m.hz; emp.spikes = m.totalSpikes; emp.brainMs = m.brainMs;
+    emp.wnorm = m.wnorm || 0;
+    // 학습이 실제로 일어나는지 보이게 한다. 0 에서 자라지 않으면 아무것도 안 배운 것이다.
+    if (LEARNING.includes(policyId) && emp === sel) {
+      const el = $("#polNote");
+      if (el) el.innerHTML = esc(POLICIES.learn.note) +
+        ` <b>Readout weights ‖w‖ = ${emp.wnorm.toFixed(3)}</b>`;
+    }
   }
   else if (m.t === "act") {
     if (b3d && emp === sel) b3d.setActivity(m.act);
@@ -125,21 +136,62 @@ function onMsg(emp, m) {
   else if (m.t === "error") { emp.phase = "Error"; emp.detail = m.msg; renderEmps(); }
 }
 
+/**
+ * 뇌에 보낼 시야를 고른다.
+ *
+ * 보통은 직원이 실제로 있는 판의 1인칭 시야다. 그런데 `mismatch` 정책에서는
+ * **완전히 다른 판**의 시야를 보낸다. 조향 신호의 진폭과 시간 구조는 그대로고,
+ * 화면과의 관련성만 사라진다. 눈을 가린 초파리다.
+ *
+ * 벤치에서 이 둘은 66% 대 62% 로 구분되지 않는다(t=0.98). 즉 커넥톰이 주는 것은
+ * 조향의 세기와 리듬이지 화면의 정보가 아니다. 그 결과를 글로만 적지 않고
+ * 여기서 직접 보게 하려고 데모에도 넣었다.
+ */
+function sendVision(e, fallbackField) {
+  if (policyId === "mismatch") {
+    e.bs += (Math.random() * 2 - 1 - e.bs) * 0.08;
+    e.bt += ((0.35 + Math.random() * 0.65) - e.bt) * 0.05;
+    e.blind.step(Math.max(-1, Math.min(1, e.bs * 3)), e.bt);
+    e.blind.visionField(GW, GH, e.blindVis);
+    e.worker.postMessage({ t: "vision", frame: e.blindVis });
+    return;
+  }
+  e.worker.postMessage({ t: "vision", frame: fallbackField });
+}
+
+/**
+ * 온라인 학습의 보상 — 처음 보는 장면이면 1, 아니면 0.
+ *
+ * 좌표가 아니라 뷰를 쓰는 이유는 docs/vision.js 의 viewKey 주석에 있다.
+ * 요약하면 (1) 남의 게임에는 좌표가 없고 (2) 재는 지표를 직접 최적화하면
+ * "학습이 이겼다"가 동어반복이 된다.
+ *
+ * 반드시 움직인 뒤의 시야로 불러야 한다. 어느 근무지든 시야를 워커에 보낸
+ * 직후가 그 자리다.
+ */
+function rewardView(e) {
+  if (!LEARNING.includes(policyId)) return;
+  const k = viewKey(e.vision, GW, GH);
+  e.worker.postMessage({ t: "reward", r: e.seen.has(k) ? 0 : 1 });
+  e.seen.add(k);
+}
+
 /* ── 게임 루프 ───────────────────────────────── */
 function tick() {
   for (const e of company) {
     if (!e.ready) continue;
 
     // 정책이 초파리가 아니면 여기서 입력을 만든다. 뇌는 계속 돌며 화면에 보인다.
-    // 정책이 초파리가 아니면 여기서 입력을 만든다. 커넥톰 출력을 넘겨주므로
-    // 섞은 정책은 그 위에 얹을 수 있고, 나머지 정책은 그냥 무시한다.
+    // 커넥톰 출력을 넘겨주므로 섞은 정책은 그 위에 얹을 수 있고, 나머지는 무시한다.
+    // 학습 정책(learn)은 여기서 만들지 않는다 — 뇌가 있는 워커 안에서 판독한다.
     if (policyFn) { const [sv, tv] = policyFn(e.steer, e.thrust); e.steer = sv; e.thrust = tv; }
 
     // ── 사용자가 붙인 게임 ──
     if (e === byoEmp && byo && byo.ready) {
       byo.drive(e.steer, e.thrust);
       byo.vision(GW, GH, e.vision, normalizeField);
-      e.worker.postMessage({ t: "vision", frame: e.vision });
+      sendVision(e, e.vision);
+      rewardView(e);
       played.add(byo.label);
       checkScreenQA(e, byo.screenHash(), byoQA, byo.label, byo.frameNo,
         () => evidence(byo.canvas, byo.canvas.width, byo.canvas.height));
@@ -159,7 +211,8 @@ function tick() {
     if (e === gtaEmp && gta && gta.ready) {
       gta.drive(e.steer, e.thrust);
       gta.vision(GW, GH, e.vision, normalizeField);
-      e.worker.postMessage({ t: "vision", frame: e.vision });
+      sendVision(e, e.vision);
+      rewardView(e);
       played.add("GTA1");
       checkScreenQA(e, gta.screenHash(), gtaQA, "GTA1", gta.frame,
         () => evidence($("#gta"), 640, 400));
@@ -171,7 +224,8 @@ function tick() {
       doom.drive(e.steer, e.thrust, e.dnHz > 30);
       doom.tick();
       doom.vision(GW, GH, e.vision);
-      e.worker.postMessage({ t: "vision", frame: e.vision });
+      sendVision(e, e.vision);
+      rewardView(e);
       played.add("DOOM");
       checkScreenQA(e, doom.screenHash(), doomQA, "DOOM", doom.frame,
         () => evidence((ctx) => doom.draw(ctx), 320, 200));
@@ -199,12 +253,16 @@ function tick() {
 
     // 초파리가 자기 자리에서 보는 1인칭 시야를 만들어 보낸다
     g.visionField(GW, GH, e.vision);
-    e.worker.postMessage({ t: "vision", frame: e.vision });
+    sendVision(e, e.vision);
+    rewardView(e);
 
     // 한 판이 끝나면 다음 판
     if (st.won || st.escaped || wedged || st.frame > 6000) {
       e.runs++; runs++;
       g.reset(); e.qa.reset();
+      // 판이 바뀌면 '새 칸'도 새로 센다. 안 그러면 몇 판 만에 보상이 영영 0 이 되어
+      // 학습 신호가 끊긴다(실측: 308회 뒤 정지).
+      e.seen = new Set();
       e.worker.postMessage({ t: "reset" });
     }
   }
@@ -398,9 +456,17 @@ function doReplay(f) {
 $("#hire").onclick = hire;
 let humanMode = false;
 let policyId = "fly", policyFn = null;
+const LEARNING = ["learn", "learnfly"];
 function setPolicy(id) {
   policyId = id;
   policyFn = POLICIES[id].make();
+  // 학습은 워커 안에서 돈다. 정책을 바꿀 때마다 판독을 새로 시작한다.
+  for (const e of company) {
+    if (!e.worker) continue;
+    e.seen = new Set();
+    // learn = 판독을 통째로 배운다 · learnfly = 초파리 판독 위에 보정만 배운다
+    e.worker.postMessage({ t: "learn", on: LEARNING.includes(id), onTop: id === "learnfly" });
+  }
   document.querySelectorAll(".pol").forEach((b) => b.classList.toggle("on", b.dataset.p === id));
   $("#polNote").innerHTML = esc(POLICIES[id].note);
 }
