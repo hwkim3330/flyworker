@@ -56,6 +56,9 @@ export class Gta {
     this.down = new Set();
     this.frame = 0;
     this.boot = 0;
+    this.lastHash = 0;      // 탑승 판단용 — 화면이 멈춰 있는지
+    this.stall = 0;
+    this._hf = -1; this._hg = 0; this._hv = 0;   // 프레임당 해시 캐시
     this.byHuman = false;
     this.scratch = document.createElement("canvas");
     this.sctx = this.scratch.getContext("2d", { willReadFrequently: true });
@@ -131,7 +134,20 @@ export class Gta {
     this.hold("left", steer < -0.18);
     this.hold("right", steer > 0.18);
     this.hold("up", thrust > 0.4);
-    this.hold("enter", this.frame % 240 < 8);   // 가끔 차를 타고 내린다
+
+    /*
+     * 탑승/하차.
+     *
+     * 전에는 240프레임마다 무조건 엔터를 눌렀다. GTA1 에서 엔터는 토글이라,
+     * 차에 타자마자 4초 뒤에 스스로 내렸다. 그래서 계속 걸어다니기만 했다.
+     *
+     * 지금은 화면이 한동안 멈춰 있을 때만 누른다. 벽에 끼었거나 차 옆에
+     * 서 있다는 뜻이고, 둘 다 엔터가 도움이 되는 상황이다. 달리는 중에는
+     * 화면이 계속 바뀌므로 누르지 않는다 — 타고 있으면 타고 있게 둔다.
+     */
+    const h = this.screenHash();
+    if (h === this.lastHash) this.stall++; else { this.stall = 0; this.lastHash = h; }
+    this.hold("enter", this.stall > 90 && this.stall % 30 < 6);
   }
 
   /** 부팅 단계를 건너뛴다 (사람이 직접 시작하고 싶을 때) */
@@ -155,7 +171,13 @@ export class Gta {
   }
 
   /** 화면 해시 — 정지·반복 감지용 */
+  /**
+   * 화면 해시. WebGL 캔버스에서 읽어오는 건 GPU 를 멈춰 세우는 일이라
+   * (콘솔에 "GPU stall due to ReadPixels" 가 찍힌다) 한 프레임에 한 번만 읽는다.
+   * drive() 와 QA 감지기가 같은 프레임에 둘 다 부르기 때문이다.
+   */
   screenHash(gw = 24, gh = 16) {
+    if (this._hf === this.frame && this._hg === gw * 1000 + gh) return this._hv;
     if (this.scratch.width !== gw || this.scratch.height !== gh) {
       this.scratch.width = gw; this.scratch.height = gh;
     }
@@ -163,7 +185,8 @@ export class Gta {
     const d = this.sctx.getImageData(0, 0, gw, gh).data;
     let h = 2166136261;
     for (let i = 0; i < d.length; i += 7) { h ^= d[i]; h = Math.imul(h, 16777619); }
-    return h >>> 0;
+    this._hf = this.frame; this._hg = gw * 1000 + gh; this._hv = h >>> 0;
+    return this._hv;
   }
 
   releaseAll() { for (const k of [...this.down]) this.hold(k, false); }

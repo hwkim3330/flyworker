@@ -83,6 +83,12 @@ header .meta{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:11.5px
 .stage{position:relative;aspect-ratio:4/3;background:#000;overflow:hidden;border-radius:14px;border:1px solid var(--line)}
 .stage canvas,.stage iframe{position:absolute;inset:0;width:100%;height:100%;display:block;
   object-fit:contain;image-rendering:pixelated;opacity:0;transition:opacity .22s ease;pointer-events:none}
+/*
+ * pixelated 는 확대할 때만 맞다. 둠(640×400)과 연구실(320×240)은 늘려서 그리니
+ * 픽셀이 살아야 하지만, GTA 는 carnage3d 가 1680×1050 으로 그린 걸 728px 로
+ * 줄여서 그린다. 줄이는데 최근접 샘플링을 쓰면 계단과 반짝임이 심하게 진다.
+ */
+.stage canvas#gta{image-rendering:auto}
 .stage canvas.showing,.stage iframe.showing{opacity:1;pointer-events:auto}
 /* 남의 게임은 우리 페이지 출처를 물려받은 blob: 문서다. 테두리를 지운다. */
 .stage iframe{border:0;background:#000}
@@ -97,7 +103,8 @@ header .meta{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:11.5px
 .legend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}
 
 /* ── 버튼 ─────────────────────────────── */
-.seg{display:inline-flex;background:var(--surface2);border:1px solid var(--line);border-radius:11px;padding:3px;gap:3px}
+/* 정책이 6개가 되면서 좁은 화면에서 줄이 넘쳤다. 감싸지 않으면 본문이 가로로 스크롤된다. */
+.seg{display:inline-flex;flex-wrap:wrap;max-width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:11px;padding:3px;gap:3px}
 .seg button{background:none;border:0;color:var(--fg2);font:inherit;font-size:13.5px;
   padding:7px 14px;border-radius:8px;cursor:pointer;transition:.16s;white-space:nowrap}
 .seg button:hover{color:var(--fg)}
@@ -218,3 +225,8 @@ footer{color:var(--fg3);font-size:12.5px;text-align:center;padding:30px;border-t
   transition:opacity .65s cubic-bezier(.2,.8,.2,1),transform .65s cubic-bezier(.2,.8,.2,1)}
 .rise.in{opacity:1;transform:none}
 @media(prefers-reduced-motion:reduce){.rise{opacity:1;transform:none;transition:none}}
+
+/* 한계 설명 안에 들어가는 작은 표 (예: 이득별 성능) */
+table.mini{border-collapse:collapse;margin:10px 0;font-size:12.5px}
+table.mini th,table.mini td{border:1px solid var(--line);padding:4px 10px;text-align:left}
+table.mini th{color:var(--fg3);font-weight:500}

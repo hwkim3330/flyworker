@@ -93,7 +93,16 @@ export async function calibrate(brain, eye, dn, opt = {}) {
  * 그래야 "왼쪽 채널이 원래 더 세게 운다" 같은 개체차가 상쇄되고,
  * 전체 밝기가 오르내려도 좌우 비율만 남는다.
  */
-export function steering(brain, cal, gain = 2.0, adapt = 1 / 40) {
+/*
+ * 기본 이득과 적응 속도. 환경변수로 덮어쓸 수 있게 둔 것은 벤치에서
+ * 값을 바꿔가며 재기 위해서다(브라우저에는 process 가 없으니 그대로 기본값).
+ */
+const DEF_GAIN = Number(globalThis.process?.env?.STEER_GAIN ?? 2.0);
+const DEF_ADAPT = 1 / Number(globalThis.process?.env?.STEER_ADAPT ?? 10);
+// 짧은 평활의 세기. 작을수록 한 방향을 오래 유지한다(= 덜 떨린다).
+const DEF_SMOOTH = Number(globalThis.process?.env?.STEER_SMOOTH ?? 0.12);
+
+export function steering(brain, cal, gain = DEF_GAIN, adapt = DEF_ADAPT) {
   const l = brain.groupHz(cal.leftCh) / cal.baseL;
   const r = brain.groupHz(cal.rightCh) / cal.baseR;
   const s = l + r;
@@ -110,10 +119,17 @@ export function steering(brain, cal, gain = 2.0, adapt = 1 / 40) {
    * 그래서 자기 자신의 평균을 빼고 "평소와 얼마나 다른가"만 본다.
    * 감각 적응과 같은 원리다. 일정한 치우침은 스스로 사라진다.
    *
-   * 적응 시간과 이득은 탐색 범위를 기준으로 실측해 정했다.
-   * 1500프레임 4시드 평균 방문 칸 수:
-   *   gain 4.0 / adapt 1/150  →  16.5칸,  회전 3.7바퀴  (제자리에서 돌았다)
-   *   gain 2.0 / adapt 1/40   →  23.8칸,  회전 1.3바퀴
+   * 적응 시간과 이득은 실측해 정했다. 짧은 시험(1500프레임)의 순위는 믿지 않는다 —
+   * 거기서 1등이던 조합이 전체 벤치에서 꼴찌로 뒤집힌 적이 있다. 그래서
+   * 24,000프레임 3회차 벤치의 탐색률로 정한다:
+   *   adapt 1/40 / gain 2.0  →  42%   (선회반경 40px — 제자리에서 돌았다)
+   *   adapt 1/10 / gain 2.0  →  50%   ← 지금 값
+   *   adapt 1/10 / gain 3.0  →  50%   (3회차 범위 안, 차이 없음)
+   *   adapt 1/10 / gain 4.0  →  34%
+   *   adapt 1/10 / gain 1.0  →  20%
+   *
+   * 적응이 느리면 조향에 잔류 편향(+0.044)이 남고, 1500프레임이면 그것만으로
+   * 0.9바퀴를 돈다. 1/10 으로 올리면 편향이 0.008 로, 순회전이 0.09바퀴로 떨어진다.
    * QA 퍼저에게 중요한 것은 목표 도달이 아니라 얼마나 넓게 두들기느냐다.
    */
   if (cal._ema === undefined) cal._ema = raw;
@@ -126,7 +142,7 @@ export function steering(brain, cal, gain = 2.0, adapt = 1 / 40) {
    * 초파리의 조향도 개별 스파이크가 아니라 집단의 시간 평균으로 결정된다.
    */
   if (cal._sm === undefined) cal._sm = 0;
-  cal._sm += (dev - cal._sm) * 0.12;
+  cal._sm += (dev - cal._sm) * DEF_SMOOTH;
 
   return Math.max(-1, Math.min(1, cal._sm * gain));
 }
